@@ -1,0 +1,36 @@
+plugins {
+    id 'org.springframework.boot' version '3.3.4'
+    id 'io.spring.dependency-management' version '1.0.15.RELEASE'
+    id 'java'
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext.spring_version = '3.3.4'
+ext.lombok_version = '1.18.34'
+
+dependencies {
+    // Spring Boot Web
+    implementation "org.springframework.boot:spring-boot-starter-web:$spring_version"
+
+    // Spring Data JPA
+    implementation "org.springframework.boot:spring-boot-starter-data-jpa:$spring_version"
+
+    implementation 'net.logstash.logback:logstash-logback-encoder:7.3'
+
+    //Логирование
+    implementation 'org.slf4j:slf4j-api:2.0.16'
+    implementation 'ch.qos.logback:logback-classic:1.5.11'
+
+    // PostgreSQL Driver
+    runtimeOnly 'org.postgresql:postgresql:42.6.0'
+
+    // Lombok
+    compileOnly "org.projectlombok:lombok:$lombok_version"
+    annotationProcessor "org.projectlombok:lombok:$lombok_version"
+
+    // Testing
+    testImplementation "org.springframework.boot:spring-boot-starter-test:$spring_version"
+}

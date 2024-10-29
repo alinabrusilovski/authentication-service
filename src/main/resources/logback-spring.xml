@@ -1,0 +1,49 @@
+<configuration>
+    <!-- Определение переменных окружения с дефолтными значениями -->
+    <property name="LOG_LEVEL" value="${LOG_LEVEL:-INFO}"/>
+    <property name="APP_NAME" value="${APP_NAME:-payment-service}"/>
+    <property name="RELATION_ID" value="${RELATION_ID:-unknown}"/>
+    <property name="CONTROLLER_LOG_LEVEL" value="${CONTROLLER_LOG_LEVEL:-INFO}"/>
+    <property name="SERVICE_LOG_LEVEL" value="${SERVICE_LOG_LEVEL:-DEBUG}"/>
+
+    <!-- Консольный аппендер для вывода логов в формате JSON -->
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp/>
+                <pattern>
+                <pattern>
+                    {
+                    "level": "%level",
+                    "logger": "%logger",
+                    "thread": "%thread",
+                    "message": "%message",
+                    "relationId": "%X{relationId}",
+                    "appName": "${APP_NAME}",
+                    "exception": "%exception"
+                    }
+                </pattern>
+                </pattern>
+            </providers>
+        </encoder>
+    </appender>
+
+    <!-- Установка уровня логирования по умолчанию на DEBUG для всех компонентов -->
+    <root level="DEBUG">
+        <appender-ref ref="console"/>
+    </root>
+
+    <!-- Уровень логирования INFO для контроллеров приложения -->
+    <logger name="com.paymentservice.controller" level="${CONTROLLER_LOG_LEVEL}">
+        <appender-ref ref="console"/>
+    </logger>
+
+    <!-- Уровень логирования DEBUG для сервисов приложения -->
+    <logger name="com.paymentservice.service" level="${SERVICE_LOG_LEVEL}">
+        <appender-ref ref="console"/>
+    </logger>
+
+    <!-- Уровень логирования WARN для библиотек Spring и Hibernate -->
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="org.hibernate" level="WARN"/>
+</configuration>
