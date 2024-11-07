@@ -24,6 +24,11 @@ dependencies {
     implementation 'org.slf4j:slf4j-api:2.0.16'
     implementation 'ch.qos.logback:logback-classic:1.5.11'
 
+    //Spring Security
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    //JSON Web Token
+    implementation 'io.jsonwebtoken:jjwt:0.9.1'
+
     // PostgreSQL Driver
     runtimeOnly 'org.postgresql:postgresql:42.6.0'
 
