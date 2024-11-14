@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 @Service
 public interface IAuthService {
 
-    void registerUser(String email, String name, String secondName, String password);
+    boolean checkPassword(String email, String password) throws Exception;
 
-    int authenticate(String username, String password);
 }

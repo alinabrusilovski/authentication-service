@@ -4,12 +4,21 @@ plugins {
     id 'java'
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
 repositories {
     mavenCentral()
 }
 
-ext.spring_version = '3.3.4'
-ext.lombok_version = '1.18.34'
+ext {
+    spring_version = '3.3.4'
+    lombok_version = '1.18.34'
+    junit_version = '5.8.2'
+    mockito_version = '4.6.1'
+}
 
 dependencies {
     // Spring Boot Web
@@ -18,27 +27,41 @@ dependencies {
     // Spring Data JPA
     implementation "org.springframework.boot:spring-boot-starter-data-jpa:$spring_version"
 
+    // Logstash Logback Encoder (For structured logging)
     implementation 'net.logstash.logback:logstash-logback-encoder:7.3'
 
-    //Логирование
+    // Logging (SLF4J and Logback)
     implementation 'org.slf4j:slf4j-api:2.0.16'
     implementation 'ch.qos.logback:logback-classic:1.5.11'
-
-    //Spring Security
-    implementation "org.springframework.boot:spring-boot-starter-security:$spring_version"
-    //JSON Web Token
-    implementation 'io.jsonwebtoken:jjwt:0.9.1'
-
-    //validation
-    implementation "org.springframework.boot:spring-boot-starter-validation:$spring_version"
 
     // PostgreSQL Driver
     runtimeOnly 'org.postgresql:postgresql:42.6.0'
 
-    // Lombok
-    compileOnly "org.projectlombok:lombok:$lombok_version"
+    // Lombok (for reducing boilerplate code)
+    implementation "org.projectlombok:lombok:$lombok_version"
     annotationProcessor "org.projectlombok:lombok:$lombok_version"
+    testAnnotationProcessor "org.projectlombok:lombok:$lombok_version"
 
-    // Testing
+    // Spring Boot Starter Security
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    // Jakarta Validation API
+    implementation 'jakarta.validation:jakarta.validation-api:3.0.2'
+
+    // Hibernate Validator (реализация Jakarta Validation)
+    implementation 'org.hibernate.validator:hibernate-validator:6.2.0.Final'
+
+    // Для интеграции валидации с Spring Boot
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // Testing Dependencies
     testImplementation "org.springframework.boot:spring-boot-starter-test:$spring_version"
+    testImplementation "org.junit.jupiter:junit-jupiter-api:$junit_version"
+    testImplementation "org.junit.jupiter:junit-jupiter-engine:$junit_version"
+    testImplementation "org.mockito:mockito-inline:$mockito_version"
+    testImplementation "org.mockito:mockito-junit-jupiter:$mockito_version"
+}
+
+test {
+    useJUnitPlatform()
 }

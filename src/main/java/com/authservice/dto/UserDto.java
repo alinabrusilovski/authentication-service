@@ -1,5 +1,6 @@
 package com.authservice.dto;
 
+import jakarta.persistence.Id;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -16,6 +17,7 @@ import java.time.LocalDate;
 @ToString
 public class UserDto {
         @Nullable
+        @Id
         private Integer id;
 
         private String name;
