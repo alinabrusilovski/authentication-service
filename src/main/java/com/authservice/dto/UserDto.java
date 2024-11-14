@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.springframework.lang.Nullable;
+import org.springframework.stereotype.Component;
 
 
 import java.time.LocalDate;
@@ -16,12 +17,8 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @ToString
 public class UserDto {
-        @Nullable
-        @Id
         private Integer id;
-
         private String name;
-
         private String secondName;
         @Email(message = "Invalid email format")
         @NotBlank(message = "Email cannot be blank")

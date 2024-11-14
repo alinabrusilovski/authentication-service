@@ -42,17 +42,9 @@ dependencies {
     annotationProcessor "org.projectlombok:lombok:$lombok_version"
     testAnnotationProcessor "org.projectlombok:lombok:$lombok_version"
 
-    // Spring Boot Starter Security
-    implementation 'org.springframework.boot:spring-boot-starter-security'
-
-    // Jakarta Validation API
+    // Jakarta Validation
     implementation 'jakarta.validation:jakarta.validation-api:3.0.2'
-
-    // Hibernate Validator (реализация Jakarta Validation)
     implementation 'org.hibernate.validator:hibernate-validator:6.2.0.Final'
-
-    // Для интеграции валидации с Spring Boot
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
 
     // Testing Dependencies
     testImplementation "org.springframework.boot:spring-boot-starter-test:$spring_version"
@@ -60,7 +52,9 @@ dependencies {
     testImplementation "org.junit.jupiter:junit-jupiter-engine:$junit_version"
     testImplementation "org.mockito:mockito-inline:$mockito_version"
     testImplementation "org.mockito:mockito-junit-jupiter:$mockito_version"
+
 }
+
 
 test {
     useJUnitPlatform()

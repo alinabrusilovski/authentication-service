@@ -1,6 +1,7 @@
 package com.authservice.service;
 
 import com.authservice.dto.UserDto;
+import com.authservice.entity.UserEntity;
 import com.authservice.repository.UserRepository;
 import com.authservice.security.IPasswordHasher;
 import com.authservice.security.PasswordHasher;
@@ -16,7 +17,7 @@ public class AuthService implements IAuthService {
     @Autowired
     public AuthService(
             UserRepository userRepository,
-            PasswordHasher passwordHasher
+            IPasswordHasher passwordHasher
     ) {
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;
@@ -25,7 +26,7 @@ public class AuthService implements IAuthService {
 
     @Override
     public boolean checkPassword(String email, String password) throws Exception {
-        UserDto user = userRepository.findByEmail(email);
+        UserEntity user = userRepository.findByEmail(email);
 
         if (user == null) {
             return false;

@@ -16,11 +16,10 @@ public class PasswordHasher implements IPasswordHasher {
     private static final int ITERATIONS = 65536;
     private static final int KEY_LENGTH = 128;
 
-    private final Random random;
+    private final Random random = new Random();
     private final SecretKeyFactory factory;
 
-    public PasswordHasher(Random random) throws Exception {
-        this.random = random;
+    public PasswordHasher() throws Exception {
         this.factory = SecretKeyFactory.getInstance(HASH_ALGORITHM);
     }
 
