@@ -1,6 +1,5 @@
 package com.authservice.entity;
 
-import com.authservice.dto.ScopeDto;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -21,7 +20,7 @@ import java.time.LocalDate;
 import java.util.Set;
 
 @Entity
-@Table(name = "user")
+@Table(name = "users")
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter

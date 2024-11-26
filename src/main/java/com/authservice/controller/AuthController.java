@@ -2,7 +2,6 @@ package com.authservice.controller;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
-import com.authservice.dto.ScopeDto;
 import com.authservice.dto.UserDto;
 import com.authservice.entity.ScopeEntity;
 import com.authservice.entity.UserEntity;
@@ -60,7 +59,7 @@ public class AuthController {
     }
 
     private String generateJwtToken(UserEntity user, List<String> scopes) throws Exception {
-        String issuer = System.getenv("ISSUER"); // Например, localhost:8080/auth
+        String issuer = System.getenv("ISSUER");
         String privateKeyString = System.getenv("PRIVATE_KEY");
         PrivateKey privateKey = loadPrivateKeyFromConfig(privateKeyString);
 

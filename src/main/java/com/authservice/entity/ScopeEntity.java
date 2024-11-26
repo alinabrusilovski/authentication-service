@@ -35,6 +35,6 @@ public class ScopeEntity {
     @Column(name = "description", nullable = true)
     private String description;
 
-    @ManyToMany(mappedBy = "scope")
+    @ManyToMany(mappedBy = "scopes")
     private Set<UserEntity> users;
 }
