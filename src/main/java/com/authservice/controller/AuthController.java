@@ -2,6 +2,7 @@ package com.authservice.controller;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.authservice.config.AuthConfig;
 import com.authservice.dto.UserDto;
 import com.authservice.entity.ScopeEntity;
 import com.authservice.entity.UserEntity;
@@ -31,11 +32,13 @@ public class AuthController {
 
     private final AuthService authService;
     private final UserRepository userRepository;
+    private final AuthConfig authConfig;
 
     @Autowired
-    AuthController(AuthService authService, UserRepository userRepository) {
+    AuthController(AuthService authService, UserRepository userRepository, AuthConfig authConfig) {
         this.authService = authService;
         this.userRepository = userRepository;
+        this.authConfig = authConfig;
     }
 
 
@@ -47,6 +50,7 @@ public class AuthController {
             if (isValid) {
                 UserEntity user = userRepository.findByEmail(userDto.getEmail());
                 List<String> scopes = authService.getScopesForUser(userDto.getEmail());
+
                 String token = generateJwtToken(user, scopes);
 
                 return new ResponseEntity<>(token, HttpStatus.OK);
@@ -59,8 +63,8 @@ public class AuthController {
     }
 
     private String generateJwtToken(UserEntity user, List<String> scopes) throws Exception {
-        String issuer = System.getenv("ISSUER");
-        String privateKeyString = System.getenv("PRIVATE_KEY");
+        String issuer = authConfig.getIssuer();
+        String privateKeyString = authConfig.getPrivateKey();
         PrivateKey privateKey = loadPrivateKeyFromConfig(privateKeyString);
 
         return JWT.create()
