@@ -46,9 +46,11 @@ dependencies {
     implementation 'jakarta.validation:jakarta.validation-api:3.0.2'
     implementation 'org.hibernate.validator:hibernate-validator:6.2.0.Final'
 
+    // BouncyCastle
+    implementation 'org.bouncycastle:bcprov-jdk15on:1.70'
+
     //.env
     implementation 'io.github.cdimascio:dotenv-java:3.0.2'
-
 
     // Testing Dependencies
     testImplementation "org.springframework.boot:spring-boot-starter-test:$spring_version"
