@@ -1,13 +1,12 @@
 package com.authservice.controller;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
 import com.authservice.config.AuthConfig;
 import com.authservice.dto.UserDto;
-import com.authservice.entity.ScopeEntity;
 import com.authservice.entity.UserEntity;
 import com.authservice.repository.UserRepository;
 import com.authservice.service.AuthService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,15 +15,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.security.KeyFactory;
-import java.security.PrivateKey;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.Base64;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
-
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -32,62 +25,74 @@ public class AuthController {
 
     private final AuthService authService;
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
     private final AuthConfig authConfig;
 
     @Autowired
-    AuthController(AuthService authService, UserRepository userRepository, AuthConfig authConfig) {
+    public AuthController(AuthService authService, ObjectMapper objectMapper, UserRepository userRepository, AuthConfig authConfig) {
         this.authService = authService;
+        this.objectMapper = objectMapper;
         this.userRepository = userRepository;
-        this.authConfig = authConfig;
+        this. authConfig = authConfig;
     }
-
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody UserDto userDto) {
+    public ResponseEntity<String> login(@RequestBody UserDto userDto) throws JsonProcessingException {
         try {
-            boolean isValid = authService.checkPassword(userDto.getEmail(), userDto.getPassword());
+            authService.checkPassword(userDto.getEmail(), userDto.getPassword());
 
-            if (isValid) {
-                UserEntity user = userRepository.findByEmail(userDto.getEmail());
-                List<String> scopes = authService.getScopesForUser(userDto.getEmail());
+            UserEntity user = userRepository.findByEmail(userDto.getEmail());
+            List<String> scopes = authService.getScopesForUser(userDto.getEmail());
 
-                String token = generateJwtToken(user, scopes);
+            String accessToken = authService.generateJwtToken(user, scopes);
+            String refreshToken = authService.generateRefreshToken();
+            LocalDateTime refreshTokenExpiry = authService.calculateTokenExpiry(authConfig.getRefreshTokenLifetimeValue(), authConfig.getRefreshTokenLifetimeUnit());
 
-                return new ResponseEntity<>(token, HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>("Invalid email or password", HttpStatus.BAD_REQUEST);
-            }
+            authService.updateRefreshTokenForUser(user, refreshToken, refreshTokenExpiry);
+
+            Map<String, Object> responseMap = Map.of(
+                    "access_token", accessToken,
+                    "refresh_token", refreshToken,
+                    "refresh_token_expired", refreshTokenExpiry.toString()
+            );
+            String responseJson = objectMapper.writeValueAsString(responseMap);
+
+            return ResponseEntity.ok(responseJson);
+
         } catch (Exception e) {
-            return new ResponseEntity<>("An error occurred: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+            Map<String, Object> responseMap = Map.of("message", "An error occurred: " + e.getMessage());
+            String responseJson = objectMapper.writeValueAsString(responseMap);
+            return ResponseEntity.internalServerError().body(responseJson);
         }
     }
 
-    private String generateJwtToken(UserEntity user, List<String> scopes) throws Exception {
-        String issuer = authConfig.getIssuer();
-        String privateKeyString = authConfig.getPrivateKey();
-        PrivateKey privateKey = loadPrivateKeyFromConfig(privateKeyString);
+    @PostMapping("/login/refresh")
+    public ResponseEntity<Map<String, Object>> refreshAccessToken(@RequestBody Map<String, String> request) {
+        try {
+            String refreshToken = request.get("refresh_token");
+            if (refreshToken == null || refreshToken.isBlank()) {
+                return new ResponseEntity<>(Map.of("message", "Refresh token is required"), HttpStatus.BAD_REQUEST);
+            }
 
-        return JWT.create()
-                .withIssuer(issuer)
-                .withClaim("id", user.getId().toString())
-                .withClaim("scope", scopes)
-                .withExpiresAt(new Date(System.currentTimeMillis() + 3600000))
-                .sign(Algorithm.RSA256(null, (RSAPrivateKey) privateKey));
-    }
+            UserEntity user = userRepository.findByRefreshToken(refreshToken);
 
-    private PrivateKey loadPrivateKeyFromConfig(String privateKeyString) throws Exception {
-        byte[] privateKeyBytes = Base64.getDecoder().decode(privateKeyString);
-        KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-        return keyFactory.generatePrivate(new PKCS8EncodedKeySpec(privateKeyBytes));
-    }
+            List<String> scopes = authService.getScopesForUser(user.getEmail());
+            String newAccessToken = authService.generateJwtToken(user, scopes);
+            String newRefreshToken = authService.generateRefreshToken();
+            LocalDateTime newRefreshTokenExpiry = authService.calculateTokenExpiry(authConfig.getRefreshTokenLifetimeValue(), authConfig.getRefreshTokenLifetimeUnit());
 
-    private List<String> getScopesForUser(String email) {
-        UserEntity user = userRepository.findByEmail(email);
-        if (user != null && user.getScopes() != null) {
-            return user.getScopes().stream()
-                    .map(ScopeEntity::getName)
-                    .collect(Collectors.toList());
+            authService.updateRefreshTokenForUser(user, newRefreshToken, newRefreshTokenExpiry);
+
+            Map<String, Object> response = Map.of(
+                    "access_token", newAccessToken,
+                    "refresh_token", newRefreshToken,
+                    "refresh_token_expired", newRefreshTokenExpiry.toString()
+            );
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return new ResponseEntity<>(Map.of("message", "An error occurred: " + e.getMessage()), HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return List.of();
     }
 }
