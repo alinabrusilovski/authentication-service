@@ -5,7 +5,7 @@ import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
-import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 
 @Configuration
 @ConfigurationProperties(prefix = "auth")
@@ -14,14 +14,9 @@ import java.time.temporal.ChronoUnit;
 public class AuthConfig {
 
     private long refreshTokenLifetimeValue;
-    private String refreshTokenLifetimeUnit;
     private String issuer;
     private String privateKey;
     private String publicKey;
-
-    public long getLifetimeInSeconds() {
-        ChronoUnit chronoUnit = ChronoUnit.valueOf(refreshTokenLifetimeUnit.toUpperCase());
-        return chronoUnit.getDuration().getSeconds() * refreshTokenLifetimeValue;
-    }
+    private String KID = UUID.randomUUID().toString();
 
 }

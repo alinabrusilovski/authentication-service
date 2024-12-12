@@ -16,29 +16,37 @@ import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+
 
 @Component
 public class AuthService implements IAuthService {
 
+    private static final ChronoUnit LIFETIME_UNIT = ChronoUnit.HOURS;
+
     private final UserRepository userRepository;
     private final IPasswordHasher passwordHasher;
     private final AuthConfig authConfig;
+    private final SecureRandom secureRandom;
 
     @Autowired
     public AuthService(
             UserRepository userRepository,
             IPasswordHasher passwordHasher,
-            AuthConfig authConfig
+            AuthConfig authConfig,
+            SecureRandom secureRandom
     ) {
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;
         this.authConfig = authConfig;
+        this.secureRandom = secureRandom;
     }
 
     @Override
@@ -76,19 +84,8 @@ public class AuthService implements IAuthService {
 
     public String generateRefreshToken() {
         byte[] randomBytes = new byte[200];
-        new SecureRandom().nextBytes(randomBytes);
+        secureRandom.nextBytes(randomBytes);
         return Base64.getEncoder().encodeToString(randomBytes);
-    }
-
-    public LocalDateTime calculateTokenExpiry(long lifetimeValue, String lifetimeUnit) {
-        ChronoUnit chronoUnit;
-        try {
-            chronoUnit = ChronoUnit.valueOf(lifetimeUnit.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalStateException("Invalid lifetime unit: " + lifetimeUnit, e);
-        }
-
-        return LocalDateTime.now().plus(lifetimeValue, chronoUnit);
     }
 
     private PrivateKey loadPrivateKeyFromConfig(String privateKeyString) throws Exception {
@@ -98,10 +95,31 @@ public class AuthService implements IAuthService {
     }
 
     @Transactional
-    public void updateRefreshTokenForUser(UserEntity user, String refreshToken, LocalDateTime expiryTime) {
+    public void updateRefreshTokenForUser(UserEntity user, String refreshToken, OffsetDateTime expiryTime) {
+        OffsetDateTime utcExpiryTime = OffsetDateTime.now(ZoneOffset.UTC);
+
         user.setRefreshToken(refreshToken);
-        user.setRefreshTokenExpired(expiryTime);
+        user.setRefreshTokenExpired(utcExpiryTime);
         userRepository.save(user);
+    }
+
+    public Map<String, Object> generateAndReturnTokens(UserEntity user, List<String> scopes) throws Exception {
+        String accessToken = generateJwtToken(user, scopes);
+        String refreshToken = generateRefreshToken();
+        OffsetDateTime refreshTokenExpiry = calculateTokenExpiry(authConfig.getRefreshTokenLifetimeValue());
+
+        updateRefreshTokenForUser(user, refreshToken, refreshTokenExpiry);
+
+        return Map.of(
+                "access_token", accessToken,
+                "refresh_token", refreshToken,
+                "refresh_token_expired", refreshTokenExpiry.toString()
+        );
+    }
+
+    public OffsetDateTime calculateTokenExpiry(long lifetimeValue) {
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        return now.plus(lifetimeValue, LIFETIME_UNIT);
     }
 
 }
