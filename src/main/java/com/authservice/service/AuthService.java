@@ -96,10 +96,8 @@ public class AuthService implements IAuthService {
 
     @Transactional
     public void updateRefreshTokenForUser(UserEntity user, String refreshToken, OffsetDateTime expiryTime) {
-        OffsetDateTime utcExpiryTime = OffsetDateTime.now(ZoneOffset.UTC);
-
         user.setRefreshToken(refreshToken);
-        user.setRefreshTokenExpired(utcExpiryTime);
+        user.setRefreshTokenExpired(expiryTime);
         userRepository.save(user);
     }
 

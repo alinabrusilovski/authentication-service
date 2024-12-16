@@ -5,6 +5,7 @@ import com.authservice.exception.KeyGenerationException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,9 +18,9 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
+@Slf4j
 public class WellKnownController {
 
-    private static final Logger logger = LoggerFactory.getLogger(WellKnownController.class);
 
     private final AuthConfig authConfig;
 
@@ -35,7 +36,7 @@ public class WellKnownController {
 
         if (publicKeyJson == null || publicKeyJson.isEmpty()) {
             String errorMsg = "Public key is missing or empty";
-            logger.error(errorMsg);
+            log.error(errorMsg);
             throw new KeyGenerationException(errorMsg);
         }
         ObjectMapper objectMapper = new ObjectMapper();
@@ -47,18 +48,18 @@ public class WellKnownController {
 
         if (n == null || e == null) {
             String errorMsg = "Modulus (n) or Exponent (e) are missing from the public key";
-            logger.error(errorMsg);
+            log.error(errorMsg);
             throw new KeyGenerationException(errorMsg);
         }
 
         Map<String, Object> jwk = generateJwk(n, e);
-        logger.info("Successfully generated JWK");
+        log.info("Successfully generated JWK");
 
         return new ResponseEntity<>(Map.of("keys", List.of(jwk)), HttpStatus.OK);
     }
 
     private Map<String, Object> generateJwk(String n, String e) {
-        logger.info("Generating JWK from modulus (n) and exponent (e)");
+        log.info("Generating JWK from modulus (n) and exponent (e)");
 
         return Map.of(
                 "kty", "RSA",
@@ -80,7 +81,7 @@ public class WellKnownController {
                 "issuer", host,
                 "code_challenge_methods_supported", List.of("plain", "S256")
         );
-        logger.info("Successfully fetched OpenID configuration");
+        log.info("Successfully fetched OpenID configuration");
         return new ResponseEntity<>(configuration, HttpStatus.OK);
     }
 }
