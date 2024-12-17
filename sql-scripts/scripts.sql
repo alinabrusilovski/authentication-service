@@ -90,3 +90,8 @@ ADD CONSTRAINT user_scope_user_id_fkey FOREIGN KEY (user_id) REFERENCES "users"(
 
 ALTER TABLE user_scope
 ADD CONSTRAINT user_scope_scope_id_fkey FOREIGN KEY (scope_id) REFERENCES scope(id);
+
+ALTER TABLE users
+ADD COLUMN refresh_token VARCHAR(1000) UNIQUE,
+ADD COLUMN refresh_token_expired TIMESTAMP;
+CREATE INDEX idx_refresh_token ON users(refresh_token);
