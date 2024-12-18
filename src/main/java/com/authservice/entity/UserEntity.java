@@ -17,6 +17,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.Set;
 
 @Entity
@@ -53,6 +54,12 @@ public class UserEntity {
 
     @Column(name = "deleted")
     private Boolean deleted;
+
+    @Column(name = "refresh_token", unique = true, length = 1000)
+    private String refreshToken;
+
+    @Column(name = "refresh_token_expired")
+    private OffsetDateTime refreshTokenExpired;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
