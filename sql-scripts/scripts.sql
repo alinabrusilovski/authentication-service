@@ -64,7 +64,6 @@ ALTER COLUMN updated SET DEFAULT NOW();
 ALTER TABLE "users"
 ALTER COLUMN deleted SET DEFAULT FALSE;
 
-//Создание функции для обновления updated
 CREATE OR REPLACE FUNCTION update_timestamp()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -73,7 +72,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-//Создание триггера на обновление
 CREATE TRIGGER set_updated
 BEFORE UPDATE ON "users"
 FOR EACH ROW
@@ -95,3 +93,15 @@ ALTER TABLE users
 ADD COLUMN refresh_token VARCHAR(1000) UNIQUE,
 ADD COLUMN refresh_token_expired TIMESTAMP;
 CREATE INDEX idx_refresh_token ON users(refresh_token);
+
+UPDATE scope
+SET name = 'ADMIN'
+WHERE name = 'admin';
+
+UPDATE scope
+SET name = 'SELLER'
+WHERE name = 'seller';
+
+ALTER TABLE users
+ADD COLUMN password_reset_token VARCHAR(255),
+ADD COLUMN password_reset_token_expiry TIMESTAMP WITH TIME ZONE;

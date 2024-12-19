@@ -3,12 +3,14 @@ package com.authservice.service;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.authservice.config.AuthConfig;
+import com.authservice.dto.TokenResponseDto;
 import com.authservice.entity.ScopeEntity;
 import com.authservice.entity.UserEntity;
 import com.authservice.repository.UserRepository;
 import com.authservice.security.IPasswordHasher;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.security.KeyFactory;
@@ -22,7 +24,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -34,6 +35,7 @@ public class AuthService implements IAuthService {
     private final UserRepository userRepository;
     private final IPasswordHasher passwordHasher;
     private final AuthConfig authConfig;
+    private final EmailService emailService;
     private final SecureRandom secureRandom;
 
     @Autowired
@@ -41,12 +43,14 @@ public class AuthService implements IAuthService {
             UserRepository userRepository,
             IPasswordHasher passwordHasher,
             AuthConfig authConfig,
+            EmailService emailService,
             SecureRandom secureRandom
     ) {
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;
         this.authConfig = authConfig;
         this.secureRandom = secureRandom;
+        this.emailService = emailService;
     }
 
     @Override
@@ -57,6 +61,38 @@ public class AuthService implements IAuthService {
         }
         String storedHash = user.getPassword();
         return passwordHasher.checkHash(storedHash, password);
+    }
+
+    @Override
+    public void initiatePasswordReset(String email) {
+        UserEntity user = userRepository.findByEmail(email);
+        String token = generateResetToken();
+        user.setPasswordResetToken(token);
+        user.setPasswordResetTokenExpiry(OffsetDateTime.now().plusMinutes(30));
+        userRepository.save(user);
+
+        String resetLink = "http://localhost:8080/auth/reset-password?token=" + token;
+        emailService.sendEmail(user.getEmail(), "Password Reset", "Click the link to reset your password: " + resetLink);
+    }
+
+    private String generateResetToken() {
+        byte[] randomBytes = new byte[64];
+        secureRandom.nextBytes(randomBytes);
+        return Base64.getEncoder().encodeToString(randomBytes);
+    }
+
+    @Override
+    public void resetPassword(String token, String newPassword) throws Exception {
+        UserEntity user = userRepository.findByPasswordResetToken(token);
+        if (user == null || user.getPasswordResetTokenExpiry().isBefore(OffsetDateTime.now())) {
+            throw new Exception("Invalid or expired token");
+        }
+
+        String hashedPassword = passwordHasher.generateHash(newPassword);
+        user.setPassword(hashedPassword);
+        user.setPasswordResetToken(null);
+        user.setPasswordResetTokenExpiry(null);
+        userRepository.save(user);
     }
 
     public List<String> getScopesForUser(String email) {
@@ -101,23 +137,26 @@ public class AuthService implements IAuthService {
         userRepository.save(user);
     }
 
-    public Map<String, Object> generateAndReturnTokens(UserEntity user, List<String> scopes) throws Exception {
+    public ResponseEntity<Object> generateAndReturnTokens(UserEntity user, List<String> scopes) throws Exception {
         String accessToken = generateJwtToken(user, scopes);
         String refreshToken = generateRefreshToken();
         OffsetDateTime refreshTokenExpiry = calculateTokenExpiry(authConfig.getRefreshTokenLifetimeValue());
 
         updateRefreshTokenForUser(user, refreshToken, refreshTokenExpiry);
 
-        return Map.of(
-                "access_token", accessToken,
-                "refresh_token", refreshToken,
-                "refresh_token_expired", refreshTokenExpiry.toString()
+        TokenResponseDto tokenResponse = new TokenResponseDto(
+                accessToken,
+                refreshToken,
+                refreshTokenExpiry.toString()
         );
+        return ResponseEntity.ok(tokenResponse);
     }
 
     public OffsetDateTime calculateTokenExpiry(long lifetimeValue) {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         return now.plus(lifetimeValue, LIFETIME_UNIT);
     }
+
+
 
 }

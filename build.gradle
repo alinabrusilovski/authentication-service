@@ -62,6 +62,8 @@ dependencies {
     //JWT
     implementation 'com.auth0:java-jwt:4.2.1'
 
+    //JavaMailSender
+    implementation 'org.springframework.boot:spring-boot-starter-mail:3.0.0'
 }
 
 
