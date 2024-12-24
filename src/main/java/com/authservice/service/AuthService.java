@@ -4,6 +4,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.authservice.config.AuthConfig;
 import com.authservice.dto.TokenResponseDto;
+import com.authservice.dto.UserDto;
 import com.authservice.entity.ScopeEntity;
 import com.authservice.entity.UserEntity;
 import com.authservice.repository.UserRepository;
@@ -56,11 +57,10 @@ public class AuthService implements IAuthService {
     @Override
     public boolean checkPassword(String email, String password) throws Exception {
         UserEntity user = userRepository.findByEmail(email);
-        if (user == null) {
+        if (user == null || user.getPassword() == null || user.getPassword().isEmpty()) {
             return false;
         }
-        String storedHash = user.getPassword();
-        return passwordHasher.checkHash(storedHash, password);
+        return passwordHasher.checkHash(user.getPassword(), password);
     }
 
     @Override
@@ -157,6 +157,21 @@ public class AuthService implements IAuthService {
         return now.plus(lifetimeValue, LIFETIME_UNIT);
     }
 
+    @Override
+    public void createUser(UserDto userDto) throws Exception {
+        if (!isAdminScope(userDto)) {
+            throw new SecurityException("Only users with ADMIN scope can create users with empty passwords");
+        }
+        UserEntity user = new UserEntity();
+        user.setEmail(userDto.getEmail());
+        user.setPassword("");
 
+        userRepository.save(user);
+    }
+
+    public boolean isAdminScope(UserDto user) {
+        List<String> scopes = getScopesForUser(user.getEmail());
+        return scopes.contains("ADMIN");
+    }
 
 }

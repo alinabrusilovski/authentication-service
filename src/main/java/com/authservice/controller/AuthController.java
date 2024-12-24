@@ -9,6 +9,7 @@ import com.authservice.repository.UserRepository;
 import com.authservice.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -89,4 +90,21 @@ public class AuthController {
 
         return ResponseEntity.ok("Password has been reset successfully");
     }
+
+    @PostMapping("/create-user")
+    public ResponseEntity<Object> createUser(@RequestBody UserDto userDto) throws Exception {
+        if (authService.isAdminScope(userDto)) {
+            if (userDto.getPassword() == null || userDto.getPassword().isBlank()) {
+                userDto.setPassword(null);
+            }
+            authService.createUser(userDto);
+            return ResponseEntity.status(HttpStatus.CREATED).body("User created successfully");
+        } else {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponseDto(
+                    ErrorCode.FORBIDDEN_ACTION.name(),
+                    "Only ADMIN scope can create users with empty password"
+            ));
+        }
+    }
+
 }
