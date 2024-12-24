@@ -4,6 +4,7 @@ import com.authservice.config.AuthConfig;
 import com.authservice.dto.ErrorResponseDto;
 import com.authservice.dto.JwkKeyDto;
 import com.authservice.dto.JwkResponseDto;
+import com.authservice.enums.ErrorCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,17 +35,18 @@ public class WellKnownController {
         String publicKeyJson = authConfig.getPublicKey();
 
         if (publicKeyJson == null || publicKeyJson.isEmpty()) {
-            String errorMsg = "Public key is missing or empty";
-            log.error(errorMsg);
-            ErrorResponseDto errorResponse = new ErrorResponseDto("KEY_MISSING", errorMsg);
+            log.error(ErrorCode.KEY_MISSING.getMessage());
+            ErrorResponseDto errorResponse = new ErrorResponseDto(ErrorCode.KEY_MISSING.name(),
+                    ErrorCode.KEY_MISSING.getMessage()
+            );
             return ResponseEntity.status(400).body(errorResponse);
         }
 
         Map<String, String> publicKeyMap = parsePublicKeyJson(publicKeyJson);
         if (publicKeyMap == null) {
-            String errorMsg = "Error processing public key";
-            log.error(errorMsg);
-            ErrorResponseDto errorResponse = new ErrorResponseDto("KEY_PROCESSING_ERROR", errorMsg);
+            log.error(ErrorCode.KEY_PROCESSING_ERROR.getMessage());
+            ErrorResponseDto errorResponse = new ErrorResponseDto(ErrorCode.KEY_PROCESSING_ERROR.name(),
+                    ErrorCode.KEY_PROCESSING_ERROR.getMessage());
             return ResponseEntity.status(500).body(errorResponse);
         }
 
@@ -52,13 +54,13 @@ public class WellKnownController {
         String e = publicKeyMap.get("e");
 
         if (n == null || e == null) {
-            String errorMsg = "Modulus (n) or Exponent (e) are missing from the public key";
-            log.error(errorMsg);
-            ErrorResponseDto errorResponse = new ErrorResponseDto("KEY_FORMAT_ERROR", errorMsg);
+            log.error(ErrorCode.KEY_FORMAT_ERROR.getMessage());
+            ErrorResponseDto errorResponse = new ErrorResponseDto(ErrorCode.KEY_FORMAT_ERROR.name(),
+                    ErrorCode.KEY_FORMAT_ERROR.getMessage());
             return ResponseEntity.status(400).body(errorResponse);
         }
 
-        ResponseEntity<JwkResponseDto> jwk = generateJwk(n, e);
+        JwkResponseDto jwk = generateJwk(n, e);
         log.info("Successfully generated JWK");
 
         return ResponseEntity.ok(jwk);
@@ -70,7 +72,7 @@ public class WellKnownController {
         });
     }
 
-    private ResponseEntity<JwkResponseDto> generateJwk(String n, String e) {
+    private JwkResponseDto generateJwk(String n, String e) {
         log.info("Generating JWK from modulus (n) and exponent (e)");
 
         JwkKeyDto singleKey = new JwkKeyDto(
@@ -81,10 +83,7 @@ public class WellKnownController {
                 "RS256",
                 n
         );
-
-        JwkResponseDto jwkResponse = new JwkResponseDto(List.of(singleKey));
-
-        return ResponseEntity.ok(jwkResponse);
+        return new JwkResponseDto(List.of(singleKey));
     }
 
     @GetMapping("/.well-known/openid-configuration")

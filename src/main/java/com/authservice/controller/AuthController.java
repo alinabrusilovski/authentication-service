@@ -4,8 +4,10 @@ import com.authservice.dto.ErrorResponseDto;
 import com.authservice.dto.RefreshTokenRequestDto;
 import com.authservice.dto.UserDto;
 import com.authservice.entity.UserEntity;
+import com.authservice.enums.ErrorCode;
 import com.authservice.repository.UserRepository;
 import com.authservice.service.AuthService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,37 +32,27 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Object> login(@RequestBody UserDto userDto) throws Exception {
-        if (userDto.getEmail() == null || userDto.getPassword() == null) {
-            ErrorResponseDto errorResponse = new ErrorResponseDto("VALIDATION_ERROR", "Email and password are required");
-            return ResponseEntity.badRequest().body(errorResponse);
-        }
+    public ResponseEntity<Object> login(@Valid @RequestBody UserDto userDto) throws Exception {
 
         boolean isPasswordValid = authService.checkPassword(userDto.getEmail(), userDto.getPassword());
         if (!isPasswordValid) {
-            ErrorResponseDto errorResponse = new ErrorResponseDto("INVALID_CREDENTIALS", "Invalid credentials");
+            ErrorResponseDto errorResponse = new ErrorResponseDto(ErrorCode.INVALID_CREDENTIALS.name(), ErrorCode.INVALID_CREDENTIALS.getMessage());
             return ResponseEntity.status(401).body(errorResponse);
         }
 
         UserEntity user = userRepository.findByEmail(userDto.getEmail());
         List<String> scopes = authService.getScopesForUser(userDto.getEmail());
 
-        ResponseEntity<Object> tokens = authService.generateAndReturnTokens(user, scopes);
-
-        return ResponseEntity.ok(tokens);
+        return authService.generateAndReturnTokens(user, scopes);
     }
 
     @PostMapping("/login/refresh")
-    public ResponseEntity<Object> refreshAccessToken(@RequestBody RefreshTokenRequestDto request) throws Exception {
+    public ResponseEntity<Object> refreshAccessToken(@Valid @RequestBody RefreshTokenRequestDto request) throws Exception {
         String refreshToken = request.getRefreshToken();
-        if (refreshToken == null || refreshToken.isBlank()) {
-            ErrorResponseDto errorResponse = new ErrorResponseDto("VALIDATION_ERROR", "Refresh token is required");
-            return ResponseEntity.badRequest().body(errorResponse);
-        }
 
         UserEntity user = userRepository.findByRefreshToken(refreshToken);
         if (user == null) {
-            ErrorResponseDto errorResponse = new ErrorResponseDto("INVALID_REFRESH_TOKEN", "Invalid refresh token");
+            ErrorResponseDto errorResponse = new ErrorResponseDto(ErrorCode.INVALID_REFRESH_TOKEN.name(), ErrorCode.INVALID_REFRESH_TOKEN.getMessage());
             return ResponseEntity.status(401).body(errorResponse);
         }
 
@@ -75,8 +67,7 @@ public class AuthController {
     @PostMapping("/reset-password/initiate")
     public ResponseEntity<Object> initiatePasswordReset(@RequestParam String email) {
         if (email == null || email.isBlank()) {
-            String errorMsg = "Email cannot be null or empty";
-            return ResponseEntity.badRequest().body(new ErrorResponseDto("INVALID_EMAIL", errorMsg));
+            return ResponseEntity.badRequest().body(new ErrorResponseDto(ErrorCode.INVALID_EMAIL.name(), ErrorCode.INVALID_EMAIL.getMessage()));
         }
 
         authService.initiatePasswordReset(email);
@@ -87,13 +78,11 @@ public class AuthController {
     @PostMapping("/reset-password")
     public ResponseEntity<Object> resetPassword(@RequestParam String token, @RequestParam String newPassword) throws Exception {
         if (token == null || token.isBlank()) {
-            String errorMsg = "Token cannot be null or empty";
-            return ResponseEntity.badRequest().body(new ErrorResponseDto("INVALID_TOKEN", errorMsg));
+            return ResponseEntity.badRequest().body(new ErrorResponseDto(ErrorCode.INVALID_TOKEN.name(), ErrorCode.INVALID_TOKEN.getMessage()));
         }
 
         if (newPassword == null || newPassword.isBlank()) {
-            String errorMsg = "New password cannot be null or empty";
-            return ResponseEntity.badRequest().body(new ErrorResponseDto("INVALID_PASSWORD", errorMsg));
+            return ResponseEntity.badRequest().body(new ErrorResponseDto(ErrorCode.INVALID_PASSWORD.name(), ErrorCode.INVALID_PASSWORD.getMessage()));
         }
 
         authService.resetPassword(token, newPassword);
