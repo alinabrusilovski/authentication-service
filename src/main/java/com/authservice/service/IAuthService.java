@@ -1,6 +1,8 @@
 package com.authservice.service;
 
+import com.authservice.dto.OperationResult;
 import com.authservice.dto.UserDto;
+import com.authservice.entity.UserEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,5 +18,5 @@ public interface IAuthService {
 
     void resetPassword(String token, String newPassword) throws Exception;
 
-    void createUser(UserDto userDto) throws Exception;
+    OperationResult<UserEntity> createUser(UserDto userDto) throws Exception;
 }

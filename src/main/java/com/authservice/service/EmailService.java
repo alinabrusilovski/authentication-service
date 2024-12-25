@@ -15,12 +15,12 @@ public class EmailService {
         this.javaMailSender = javaMailSender;
     }
 
-    public void sendEmail(String to, String subject, String text) {
+    public void sendEmail(String from, String to, String subject) {
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom("no-reply@yourdomain.com"); // адрес отправителя
+        message.setFrom(from);
         message.setTo(to);
         message.setSubject(subject);
-        message.setText(text);
+//        message.setText(text);
 
         javaMailSender.send(message);
     }

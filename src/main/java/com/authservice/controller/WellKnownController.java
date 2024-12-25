@@ -36,7 +36,8 @@ public class WellKnownController {
 
         if (publicKeyJson == null || publicKeyJson.isEmpty()) {
             log.error(ErrorCode.KEY_MISSING.getMessage());
-            ErrorResponseDto errorResponse = new ErrorResponseDto(ErrorCode.KEY_MISSING.name(),
+            ErrorResponseDto errorResponse = new ErrorResponseDto(
+                    ErrorCode.KEY_MISSING.name(),
                     ErrorCode.KEY_MISSING.getMessage()
             );
             return ResponseEntity.status(400).body(errorResponse);
@@ -45,8 +46,10 @@ public class WellKnownController {
         Map<String, String> publicKeyMap = parsePublicKeyJson(publicKeyJson);
         if (publicKeyMap == null) {
             log.error(ErrorCode.KEY_PROCESSING_ERROR.getMessage());
-            ErrorResponseDto errorResponse = new ErrorResponseDto(ErrorCode.KEY_PROCESSING_ERROR.name(),
-                    ErrorCode.KEY_PROCESSING_ERROR.getMessage());
+            ErrorResponseDto errorResponse = new ErrorResponseDto(
+                    ErrorCode.KEY_PROCESSING_ERROR.name(),
+                    ErrorCode.KEY_PROCESSING_ERROR.getMessage()
+            );
             return ResponseEntity.status(500).body(errorResponse);
         }
 
@@ -55,8 +58,10 @@ public class WellKnownController {
 
         if (n == null || e == null) {
             log.error(ErrorCode.KEY_FORMAT_ERROR.getMessage());
-            ErrorResponseDto errorResponse = new ErrorResponseDto(ErrorCode.KEY_FORMAT_ERROR.name(),
-                    ErrorCode.KEY_FORMAT_ERROR.getMessage());
+            ErrorResponseDto errorResponse = new ErrorResponseDto(
+                    ErrorCode.KEY_FORMAT_ERROR.name(),
+                    ErrorCode.KEY_FORMAT_ERROR.getMessage()
+            );
             return ResponseEntity.status(400).body(errorResponse);
         }
 

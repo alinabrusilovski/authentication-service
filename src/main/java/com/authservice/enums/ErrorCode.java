@@ -16,7 +16,8 @@ public enum ErrorCode {
     KEY_PROCESSING_ERROR("Error processing public key"),
     KEY_FORMAT_ERROR("Invalid key format"),
     SERVER_ERROR("Unexpected server error"),
-    FORBIDDEN_ACTION("Forbidden action: You are not allowed to perform this action");
+    FORBIDDEN_ACTION("Forbidden action: You are not allowed to perform this action"),
+    UNAUTHORIZED("Token is not valid or missing");
 
 
     private final String message;

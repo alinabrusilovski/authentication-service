@@ -3,6 +3,7 @@ package com.authservice.service;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.authservice.config.AuthConfig;
+import com.authservice.dto.OperationResult;
 import com.authservice.dto.TokenResponseDto;
 import com.authservice.dto.UserDto;
 import com.authservice.entity.ScopeEntity;
@@ -13,6 +14,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+
 
 import java.security.KeyFactory;
 import java.security.PrivateKey;
@@ -158,20 +160,14 @@ public class AuthService implements IAuthService {
     }
 
     @Override
-    public void createUser(UserDto userDto) throws Exception {
-        if (!isAdminScope(userDto)) {
-            throw new SecurityException("Only users with ADMIN scope can create users with empty passwords");
-        }
-        UserEntity user = new UserEntity();
-        user.setEmail(userDto.getEmail());
-        user.setPassword("");
+    public OperationResult<UserEntity> createUser(UserDto userDto) throws Exception {
 
-        userRepository.save(user);
-    }
+        UserEntity userEntity = new UserEntity();
+        userEntity.setEmail(userDto.getEmail());
+        userEntity.setPassword(null);
 
-    public boolean isAdminScope(UserDto user) {
-        List<String> scopes = getScopesForUser(user.getEmail());
-        return scopes.contains("ADMIN");
+        userRepository.save(userEntity);
+        return OperationResult.success(userEntity);
     }
 
 }

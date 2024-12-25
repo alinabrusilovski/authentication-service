@@ -1,6 +1,8 @@
 package com.authservice.controller;
 
 import com.authservice.dto.ErrorResponseDto;
+import com.authservice.dto.JsonWrapper;
+import com.authservice.dto.OperationResult;
 import com.authservice.dto.RefreshTokenRequestDto;
 import com.authservice.dto.UserDto;
 import com.authservice.entity.UserEntity;
@@ -11,6 +13,8 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+//import org.springframework.security.core.Authentication;
+//import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,7 +41,10 @@ public class AuthController {
 
         boolean isPasswordValid = authService.checkPassword(userDto.getEmail(), userDto.getPassword());
         if (!isPasswordValid) {
-            ErrorResponseDto errorResponse = new ErrorResponseDto(ErrorCode.INVALID_CREDENTIALS.name(), ErrorCode.INVALID_CREDENTIALS.getMessage());
+            ErrorResponseDto errorResponse = new ErrorResponseDto(
+                    ErrorCode.INVALID_CREDENTIALS.name(),
+                    ErrorCode.INVALID_CREDENTIALS.getMessage()
+            );
             return ResponseEntity.status(401).body(errorResponse);
         }
 
@@ -53,7 +60,10 @@ public class AuthController {
 
         UserEntity user = userRepository.findByRefreshToken(refreshToken);
         if (user == null) {
-            ErrorResponseDto errorResponse = new ErrorResponseDto(ErrorCode.INVALID_REFRESH_TOKEN.name(), ErrorCode.INVALID_REFRESH_TOKEN.getMessage());
+            ErrorResponseDto errorResponse = new ErrorResponseDto(
+                    ErrorCode.INVALID_REFRESH_TOKEN.name(),
+                    ErrorCode.INVALID_REFRESH_TOKEN.getMessage()
+            );
             return ResponseEntity.status(401).body(errorResponse);
         }
 
@@ -68,7 +78,11 @@ public class AuthController {
     @PostMapping("/reset-password/initiate")
     public ResponseEntity<Object> initiatePasswordReset(@RequestParam String email) {
         if (email == null || email.isBlank()) {
-            return ResponseEntity.badRequest().body(new ErrorResponseDto(ErrorCode.INVALID_EMAIL.name(), ErrorCode.INVALID_EMAIL.getMessage()));
+            ErrorResponseDto errorResponse = new ErrorResponseDto(
+                    ErrorCode.INVALID_EMAIL.name(),
+                    ErrorCode.INVALID_EMAIL.getMessage()
+            );
+            return ResponseEntity.badRequest().body(errorResponse);
         }
 
         authService.initiatePasswordReset(email);
@@ -79,11 +93,19 @@ public class AuthController {
     @PostMapping("/reset-password")
     public ResponseEntity<Object> resetPassword(@RequestParam String token, @RequestParam String newPassword) throws Exception {
         if (token == null || token.isBlank()) {
-            return ResponseEntity.badRequest().body(new ErrorResponseDto(ErrorCode.INVALID_TOKEN.name(), ErrorCode.INVALID_TOKEN.getMessage()));
+            ErrorResponseDto errorResponse = new ErrorResponseDto(
+                    ErrorCode.INVALID_TOKEN.name(),
+                    ErrorCode.INVALID_TOKEN.getMessage()
+            );
+            return ResponseEntity.badRequest().body(errorResponse);
         }
 
         if (newPassword == null || newPassword.isBlank()) {
-            return ResponseEntity.badRequest().body(new ErrorResponseDto(ErrorCode.INVALID_PASSWORD.name(), ErrorCode.INVALID_PASSWORD.getMessage()));
+            ErrorResponseDto errorResponse = new ErrorResponseDto(
+                    ErrorCode.INVALID_PASSWORD.name(),
+                    ErrorCode.INVALID_PASSWORD.getMessage()
+            );
+            return ResponseEntity.badRequest().body(errorResponse);
         }
 
         authService.resetPassword(token, newPassword);
@@ -91,20 +113,35 @@ public class AuthController {
         return ResponseEntity.ok("Password has been reset successfully");
     }
 
-    @PostMapping("/create-user")
-    public ResponseEntity<Object> createUser(@RequestBody UserDto userDto) throws Exception {
-        if (authService.isAdminScope(userDto)) {
-            if (userDto.getPassword() == null || userDto.getPassword().isBlank()) {
-                userDto.setPassword(null);
-            }
-            authService.createUser(userDto);
-            return ResponseEntity.status(HttpStatus.CREATED).body("User created successfully");
-        } else {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponseDto(
-                    ErrorCode.FORBIDDEN_ACTION.name(),
-                    "Only ADMIN scope can create users with empty password"
-            ));
-        }
-    }
-
+//    @PostMapping("/create-user")
+//    public ResponseEntity<Object> createUser(@RequestBody UserDto userDto) throws Exception {
+//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//        if (authentication == null || !authentication.isAuthenticated()) {
+//            ErrorResponseDto errorResponse = new ErrorResponseDto(
+//                    ErrorCode.UNAUTHORIZED.name(),
+//                    ErrorCode.UNAUTHORIZED.getMessage()
+//            );
+//            return ResponseEntity.status(401).body(new JsonWrapper<>(null, errorResponse));
+//        }
+//
+//        if (authentication.getAuthorities().stream().noneMatch(scope -> scope.getAuthority().equals("ROLE_ADMIN"))) {
+//            ErrorResponseDto errorResponse = new ErrorResponseDto(
+//                    ErrorCode.FORBIDDEN_ACTION.name(),
+//                    ErrorCode.FORBIDDEN_ACTION.getMessage()
+//            );
+//            return ResponseEntity.status(403).body(new JsonWrapper<>(null, errorResponse));
+//        }
+//        if (userDto.getPassword() == null || userDto.getPassword().isBlank()) {
+//            userDto.setPassword(null);
+//        }
+//        OperationResult<UserEntity> result = authService.createUser(userDto);
+//        if (result.isFailure()) {
+//            ErrorResponseDto errorResponse = new ErrorResponseDto(
+//                    ErrorCode.SERVER_ERROR.name(),
+//                    "Failed to create user"
+//            );
+//            return ResponseEntity.status(500).body(new JsonWrapper<>(null, errorResponse));
+//        }
+//        return ResponseEntity.status(HttpStatus.CREATED).body("User created successfully");
+//    }
 }
