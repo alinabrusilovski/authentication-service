@@ -14,7 +14,7 @@ public interface IAuthService {
 
     boolean checkPassword(String email, String password) throws Exception;
 
-    void initiatePasswordReset(String email);
+    void initiatePasswordReset(String email) throws Exception;
 
     void resetPassword(String token, String newPassword) throws Exception;
 

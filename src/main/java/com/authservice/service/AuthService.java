@@ -13,8 +13,8 @@ import com.authservice.security.IPasswordHasher;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.mail.MailSender;
+import org.springframework.mail.SimpleMailMessage;
 import org.springframework.stereotype.Component;
 
 
@@ -29,6 +29,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 
@@ -40,7 +41,7 @@ public class AuthService implements IAuthService {
     private final UserRepository userRepository;
     private final IPasswordHasher passwordHasher;
     private final AuthConfig authConfig;
-    private final EmailService emailService;
+    private final MailSender emailSender;
     private final SecureRandom secureRandom;
 
     @Autowired
@@ -48,14 +49,14 @@ public class AuthService implements IAuthService {
             UserRepository userRepository,
             IPasswordHasher passwordHasher,
             AuthConfig authConfig,
-            EmailService emailService,
+            MailSender emailSender,
             SecureRandom secureRandom
     ) {
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;
         this.authConfig = authConfig;
+        this.emailSender = emailSender;
         this.secureRandom = secureRandom;
-        this.emailService = emailService;
     }
 
     @Override
@@ -68,21 +69,38 @@ public class AuthService implements IAuthService {
     }
 
     @Override
-    public void initiatePasswordReset(String email) {
+    public void initiatePasswordReset(String email) throws Exception {
         UserEntity user = userRepository.findByEmail(email);
-        String token = generateResetToken();
-        user.setPasswordResetToken(token);
-        user.setPasswordResetTokenExpiry(OffsetDateTime.now().plusMinutes(30));
+        if (user == null) {
+            throw new Exception("User not found");
+        }
+        String resetToken = generatePasswordResetToken();
+
+        user.setPasswordResetToken(resetToken);
+        user.setPasswordResetTokenExpiry(OffsetDateTime.now().plusHours(1));
         userRepository.save(user);
 
-        String resetLink = "http://localhost:8080/auth/reset-password?token=" + token;
-        emailService.sendEmail(user.getEmail(), "Password Reset", "Click the link to reset your password: " + resetLink);
+        sendPasswordResetEmail(user, resetToken);
     }
 
-    private String generateResetToken() {
+    private String generatePasswordResetToken() {
         byte[] randomBytes = new byte[64];
         secureRandom.nextBytes(randomBytes);
         return Base64.getEncoder().encodeToString(randomBytes);
+    }
+
+    private void sendPasswordResetEmail(UserEntity user, String resetToken) {
+        String resetLink = authConfig.getResetPswrdLink() + resetToken;
+
+        String subject = "Password Reset Request";
+        String body = "To reset your password, click the link below:\n" + resetLink;
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(user.getEmail());
+        message.setSubject(subject);
+        message.setText(body);
+
+        emailSender.send(message);
     }
 
     @Override
