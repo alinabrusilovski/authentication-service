@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -73,4 +74,12 @@ public class UserEntity {
             inverseJoinColumns = @JoinColumn(name = "scope_id")
     )
     private Set<ScopeEntity> scopes;
+
+    @PrePersist
+    public void setCreatedAndUpdated() {
+        OffsetDateTime now = OffsetDateTime.now();
+        this.created = now;
+        this.updated = now;
+        this.deleted = false;
+    }
 }

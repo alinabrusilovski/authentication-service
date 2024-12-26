@@ -105,3 +105,5 @@ WHERE name = 'seller';
 ALTER TABLE users
 ADD COLUMN password_reset_token VARCHAR(255),
 ADD COLUMN password_reset_token_expiry TIMESTAMP WITH TIME ZONE;
+
+ALTER TABLE users ALTER COLUMN password DROP NOT NULL;

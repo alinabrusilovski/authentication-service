@@ -15,12 +15,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 //import org.springframework.security.core.Authentication;
 //import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.prepost.PreAuthorize;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -113,35 +119,39 @@ public class AuthController {
         return ResponseEntity.ok("Password has been reset successfully");
     }
 
-//    @PostMapping("/create-user")
-//    public ResponseEntity<Object> createUser(@RequestBody UserDto userDto) throws Exception {
-//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//        if (authentication == null || !authentication.isAuthenticated()) {
-//            ErrorResponseDto errorResponse = new ErrorResponseDto(
-//                    ErrorCode.UNAUTHORIZED.name(),
-//                    ErrorCode.UNAUTHORIZED.getMessage()
-//            );
-//            return ResponseEntity.status(401).body(new JsonWrapper<>(null, errorResponse));
-//        }
-//
-//        if (authentication.getAuthorities().stream().noneMatch(scope -> scope.getAuthority().equals("ROLE_ADMIN"))) {
-//            ErrorResponseDto errorResponse = new ErrorResponseDto(
-//                    ErrorCode.FORBIDDEN_ACTION.name(),
-//                    ErrorCode.FORBIDDEN_ACTION.getMessage()
-//            );
-//            return ResponseEntity.status(403).body(new JsonWrapper<>(null, errorResponse));
-//        }
-//        if (userDto.getPassword() == null || userDto.getPassword().isBlank()) {
-//            userDto.setPassword(null);
-//        }
-//        OperationResult<UserEntity> result = authService.createUser(userDto);
-//        if (result.isFailure()) {
-//            ErrorResponseDto errorResponse = new ErrorResponseDto(
-//                    ErrorCode.SERVER_ERROR.name(),
-//                    "Failed to create user"
-//            );
-//            return ResponseEntity.status(500).body(new JsonWrapper<>(null, errorResponse));
-//        }
-//        return ResponseEntity.status(HttpStatus.CREATED).body("User created successfully");
-//    }
+    @PostMapping("/create-user")
+    public ResponseEntity<JsonWrapper<Object>> createUser(@RequestBody UserDto userDto) throws Exception {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            ErrorResponseDto errorResponse = new ErrorResponseDto(
+                    ErrorCode.UNAUTHORIZED.name(),
+                    ErrorCode.UNAUTHORIZED.getMessage()
+            );
+            return ResponseEntity.status(401).body(new JsonWrapper<>(Collections.emptyList(), errorResponse));
+        }
+
+        if (authentication.getAuthorities().stream().noneMatch(scope -> scope.getAuthority().equals("ROLE_ADMIN"))) {
+            ErrorResponseDto errorResponse = new ErrorResponseDto(
+                    ErrorCode.FORBIDDEN_ACTION.name(),
+                    ErrorCode.FORBIDDEN_ACTION.getMessage()
+            );
+            return ResponseEntity.status(403).body(new JsonWrapper<>(Collections.emptyList(), errorResponse));
+        }
+
+        if (userDto.getPassword() == null || userDto.getPassword().isBlank()) {
+            userDto.setPassword(null);
+        }
+
+        OperationResult<UserEntity> result = authService.createUser(userDto);
+
+        if (result.isFailure()) {
+            ErrorResponseDto errorResponse = new ErrorResponseDto(
+                    ErrorCode.SERVER_ERROR.name(),
+                    "Failed to create user"
+            );
+            return ResponseEntity.status(500).body(new JsonWrapper<>(Collections.emptyList(), errorResponse));
+        }
+        return ResponseEntity.ok(new JsonWrapper<>(result.getValue()));
+    }
 }

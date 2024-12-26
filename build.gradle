@@ -63,6 +63,12 @@ dependencies {
     implementation 'com.auth0:java-jwt:4.2.1'
 
 
+    // Spring Security
+    implementation 'org.springframework.boot:spring-boot-starter-security:3.2.0'
+    implementation 'org.springframework.security:spring-security-config:6.1.0'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server:3.0.1'
+
+
     //JavaMailSender
     implementation 'org.springframework.boot:spring-boot-starter-mail:3.0.0'
 }

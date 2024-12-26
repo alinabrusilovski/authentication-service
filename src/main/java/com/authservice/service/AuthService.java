@@ -13,6 +13,8 @@ import com.authservice.security.IPasswordHasher;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 
@@ -164,6 +166,12 @@ public class AuthService implements IAuthService {
 
         UserEntity userEntity = new UserEntity();
         userEntity.setEmail(userDto.getEmail());
+        userEntity.setName(userDto.getName());
+        userEntity.setSecondName(userDto.getSecondName());
+        OffsetDateTime now = OffsetDateTime.now();
+        userEntity.setCreated(now);
+        userEntity.setUpdated(now);
+
         userEntity.setPassword(null);
 
         userRepository.save(userEntity);
