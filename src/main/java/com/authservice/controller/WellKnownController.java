@@ -14,7 +14,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import java.util.List;
 import java.util.Map;
 
@@ -40,7 +39,7 @@ public class WellKnownController {
                     ErrorCode.KEY_MISSING.name(),
                     ErrorCode.KEY_MISSING.getMessage()
             );
-            return ResponseEntity.status(400).body(errorResponse);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
 
         Map<String, String> publicKeyMap = parsePublicKeyJson(publicKeyJson);
@@ -50,7 +49,7 @@ public class WellKnownController {
                     ErrorCode.KEY_PROCESSING_ERROR.name(),
                     ErrorCode.KEY_PROCESSING_ERROR.getMessage()
             );
-            return ResponseEntity.status(500).body(errorResponse);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
 
         String n = publicKeyMap.get("n");
@@ -62,7 +61,7 @@ public class WellKnownController {
                     ErrorCode.KEY_FORMAT_ERROR.name(),
                     ErrorCode.KEY_FORMAT_ERROR.getMessage()
             );
-            return ResponseEntity.status(400).body(errorResponse);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
 
         JwkResponseDto jwk = generateJwk(n, e);

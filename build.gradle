@@ -73,6 +73,17 @@ dependencies {
 
     //JavaMailSender
     implementation 'org.springframework.boot:spring-boot-starter-mail:3.0.0'
+
+    //Jakarta Mail
+    implementation 'jakarta.mail:jakarta.mail-api:1.6.5'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    //RabbitMQ
+    implementation 'org.springframework.boot:spring-boot-starter-amqp'
+    //Kafka
+    implementation 'org.springframework.kafka:spring-kafka'
+    //Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 }
 
 

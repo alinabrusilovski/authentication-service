@@ -3,6 +3,7 @@ package com.authservice.service;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.authservice.config.AuthConfig;
+import com.authservice.dto.EmailMessage;
 import com.authservice.dto.OperationResult;
 import com.authservice.dto.TokenResponseDto;
 import com.authservice.dto.UserDto;
@@ -11,13 +12,10 @@ import com.authservice.entity.UserEntity;
 import com.authservice.repository.UserRepository;
 import com.authservice.security.IPasswordHasher;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mail.MailSender;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.stereotype.Component;
-
-
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
@@ -29,11 +27,11 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 
 @Component
+@Slf4j
 public class AuthService implements IAuthService {
 
     private static final ChronoUnit LIFETIME_UNIT = ChronoUnit.HOURS;
@@ -41,23 +39,26 @@ public class AuthService implements IAuthService {
     private final UserRepository userRepository;
     private final IPasswordHasher passwordHasher;
     private final AuthConfig authConfig;
-    private final MailSender emailSender;
     private final SecureRandom secureRandom;
+    private final IEmailPublisherService emailPublisherService;
+
 
     @Autowired
     public AuthService(
             UserRepository userRepository,
             IPasswordHasher passwordHasher,
             AuthConfig authConfig,
-            MailSender emailSender,
-            SecureRandom secureRandom
+            SecureRandom secureRandom,
+            IEmailPublisherService emailPublisherService
+
     ) {
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;
         this.authConfig = authConfig;
-        this.emailSender = emailSender;
         this.secureRandom = secureRandom;
+        this.emailPublisherService = emailPublisherService;
     }
+
 
     @Override
     public boolean checkPassword(String email, String password) throws Exception {
@@ -77,10 +78,17 @@ public class AuthService implements IAuthService {
         String resetToken = generatePasswordResetToken();
 
         user.setPasswordResetToken(resetToken);
-        user.setPasswordResetTokenExpiry(OffsetDateTime.now().plusHours(1));
+        user.setPasswordResetTokenExpiry(OffsetDateTime.now().plusHours(authConfig.getPasswordResetTokenExpiryHours()));
         userRepository.save(user);
 
-        sendPasswordResetEmail(user, resetToken);
+        log.debug("Sending password reset request for email: {}", email);
+
+        EmailMessage emailMessage = new EmailMessage(
+                email,
+                "Password Reset Request",
+                "Click here to reset your password: " + resetToken
+        );
+        emailPublisherService.sendEmailMessage(emailMessage);
     }
 
     private String generatePasswordResetToken() {
@@ -89,24 +97,11 @@ public class AuthService implements IAuthService {
         return Base64.getEncoder().encodeToString(randomBytes);
     }
 
-    private void sendPasswordResetEmail(UserEntity user, String resetToken) {
-        String resetLink = authConfig.getResetPswrdLink() + resetToken;
-
-        String subject = "Password Reset Request";
-        String body = "To reset your password, click the link below:\n" + resetLink;
-
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(user.getEmail());
-        message.setSubject(subject);
-        message.setText(body);
-
-        emailSender.send(message);
-    }
 
     @Override
     public void resetPassword(String token, String newPassword) throws Exception {
         UserEntity user = userRepository.findByPasswordResetToken(token);
-        if (user == null || user.getPasswordResetTokenExpiry().isBefore(OffsetDateTime.now())) {
+        if (user == null || user.getPasswordResetTokenExpiry() == null || user.getPasswordResetTokenExpiry().isBefore(OffsetDateTime.now())) {
             throw new Exception("Invalid or expired token");
         }
 
@@ -115,6 +110,14 @@ public class AuthService implements IAuthService {
         user.setPasswordResetToken(null);
         user.setPasswordResetTokenExpiry(null);
         userRepository.save(user);
+    }
+
+    public void sendEmailVerification(String email) {
+        String subject = "Verify your email";
+        String body = "Please verify your email by clicking the link";
+
+        EmailMessage emailMessage = new EmailMessage(email, subject, body);
+        emailPublisherService.sendEmailMessage(emailMessage);
     }
 
     public List<String> getScopesForUser(String email) {
