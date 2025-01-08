@@ -1,5 +1,6 @@
 package com.authservice.config;
 
+import com.authservice.service.CompositeEmailPublisherService;
 import com.authservice.service.IEmailPublisherService;
 import com.authservice.service.KafkaEmailPublisherService;
 import com.authservice.service.RabbitMQEmailPublisherService;
@@ -10,6 +11,8 @@ import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
 
 
 @Configuration
@@ -24,6 +27,11 @@ public class EmailPublisherConfig {
             RabbitMQEmailPublisherService rabbitMQEmailPublisherService,
             RedisEmailPublisherService redisEmailPublisherService
     ) {
+        if (emailPublisherType.equalsIgnoreCase("all")) {
+            return new CompositeEmailPublisherService(
+                    List.of(kafkaEmailPublisherService, rabbitMQEmailPublisherService, redisEmailPublisherService)
+            );
+        }
         return switch (emailPublisherType.toLowerCase()) {
             case "rabbitmq" -> rabbitMQEmailPublisherService;
             case "kafka" -> kafkaEmailPublisherService;

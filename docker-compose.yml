@@ -1,0 +1,21 @@
+version: '3'
+services:
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    networks:
+      - kafka-net
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: bitnami/kafka:latest
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    networks:
+      - kafka-net
+    ports:
+      - "9093:9093"
+
+networks:
+  kafka-net:
+    driver: bridge

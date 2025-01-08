@@ -86,7 +86,7 @@ public class AuthService implements IAuthService {
         EmailMessage emailMessage = new EmailMessage(
                 email,
                 "Password Reset Request",
-                "Click here to reset your password: " + resetToken
+                "Click here to reset your password: " + authConfig.getResetPswrdLink() + resetToken
         );
         emailPublisherService.sendEmailMessage(emailMessage);
     }
