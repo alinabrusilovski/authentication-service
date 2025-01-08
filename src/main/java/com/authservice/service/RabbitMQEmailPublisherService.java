@@ -13,21 +13,17 @@ import org.springframework.stereotype.Component;
 public class RabbitMQEmailPublisherService implements IEmailPublisherService {
 
     private final RabbitTemplate rabbitTemplate;
-    private final String exchange;
-    private final String routingKey;
+    private final String queue;
 
     public RabbitMQEmailPublisherService(RabbitTemplate rabbitTemplate,
-                                         @Value("${email.rabbitmq.exchange}") String exchange,
-                                         @Value("${email.rabbitmq.routing-key}") String routingKey) {
+                                         @Value("${email.rabbitmq.queue}") String queue) {
         this.rabbitTemplate = rabbitTemplate;
-        this.exchange = exchange;
-        this.routingKey = routingKey;
+        this.queue = queue;
     }
 
     @Override
     public void sendEmailMessage(EmailMessage emailMessage) {
-        rabbitTemplate.convertAndSend(exchange, routingKey, emailMessage);
+        rabbitTemplate.convertAndSend(queue, emailMessage);
         log.debug("Sending password reset request for email: {}", emailMessage);
-
     }
 }

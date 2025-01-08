@@ -34,6 +34,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/health").permitAll()
                         .requestMatchers("/auth/reset-password/initiate").permitAll()
+                        .requestMatchers("/auth/reset-password").permitAll()
                         .requestMatchers("/.well-known/jwks.json").permitAll()
                         .requestMatchers("/auth/login").permitAll()
                         .requestMatchers("/auth/create-user").hasRole("ADMIN")
