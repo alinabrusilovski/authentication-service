@@ -8,6 +8,10 @@ import com.authservice.service.RabbitMQEmailPublisherService;
 import com.authservice.service.RedisEmailPublisherService;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.DirectExchange;
+import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -46,36 +50,34 @@ public class EmailPublisherConfig {
         }
         return switch (emailPublisherType.toLowerCase()) {
             case "rabbitmq" -> rabbitMQEmailPublisherService;
-            case "kafka" -> kafkaEmailPublisherService;
-            case "redis" -> redisEmailPublisherService;
+//            case "kafka" -> kafkaEmailPublisherService;
+//            case "redis" -> redisEmailPublisherService;
             default -> throw new IllegalArgumentException("Unsupported email publisher type: " + emailPublisherType);
         };
     }
 
+    // RabbitMQ Configuration
     @Bean
     public Jackson2JsonMessageConverter jackson2JsonMessageConverter() {
         return new Jackson2JsonMessageConverter();
     }
-
     @Bean
-    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
-        RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
-        rabbitTemplate.setMessageConverter(jackson2JsonMessageConverter());
-        return rabbitTemplate;
+    public DirectExchange emailExchange(@Value("${email.rabbitmq.exchange}") String exchangeName) {
+        return new DirectExchange(exchangeName);
     }
 
-    @Bean
-    public KafkaTemplate<String, EmailMessage> kafkaTemplate() {
-        return new KafkaTemplate<>(producerFactory());
-    }
-
-    @Bean
-    public ProducerFactory<String, EmailMessage> producerFactory() {
-        Map<String, Object> configProps = new HashMap<>();
-        configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBootstrapServers);
-        configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-        return new DefaultKafkaProducerFactory<>(configProps);
-    }
+//    @Bean
+//    public KafkaTemplate<String, EmailMessage> kafkaTemplate() {
+//        return new KafkaTemplate<>(producerFactory());
+//    }
+//
+//    @Bean
+//    public ProducerFactory<String, EmailMessage> producerFactory() {
+//        Map<String, Object> configProps = new HashMap<>();
+//        configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaBootstrapServers);
+//        configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+//        configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+//        return new DefaultKafkaProducerFactory<>(configProps);
+//    }
 
 }
