@@ -1,5 +1,6 @@
 package com.authservice.exception;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -47,5 +48,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleKeyGenerationException(KeyGenerationException ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(JsonProcessingException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<Map<String, String>> handleJsonProcessingException(JsonProcessingException ex) {
+        String errorMsg = "Error parsing JSON: " + ex.getMessage();
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("message", errorMsg));
     }
 }

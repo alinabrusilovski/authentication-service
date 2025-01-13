@@ -1,26 +1,25 @@
 package com.authservice.controller;
 
 import com.authservice.config.AuthConfig;
-import com.authservice.exception.KeyGenerationException;
+import com.authservice.dto.ErrorResponseDto;
+import com.authservice.dto.JwkKeyDto;
+import com.authservice.dto.JwkResponseDto;
+import com.authservice.enums.ErrorCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @Slf4j
 public class WellKnownController {
-
 
     private final AuthConfig authConfig;
 
@@ -30,45 +29,65 @@ public class WellKnownController {
     }
 
     @GetMapping("/.well-known/jwks.json")
-    public ResponseEntity<Map<String, Object>> getJwks() throws JsonProcessingException {
+    public ResponseEntity<Object> getJwks() throws JsonProcessingException {
 
         String publicKeyJson = authConfig.getPublicKey();
 
         if (publicKeyJson == null || publicKeyJson.isEmpty()) {
-            String errorMsg = "Public key is missing or empty";
-            log.error(errorMsg);
-            throw new KeyGenerationException(errorMsg);
+            log.error(ErrorCode.KEY_MISSING.getMessage());
+            ErrorResponseDto errorResponse = new ErrorResponseDto(
+                    ErrorCode.KEY_MISSING.name(),
+                    ErrorCode.KEY_MISSING.getMessage()
+            );
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
-        ObjectMapper objectMapper = new ObjectMapper();
-        Map<String, String> publicKeyMap = objectMapper.readValue(publicKeyJson, new TypeReference<Map<String, String>>() {
-        });
+
+        Map<String, String> publicKeyMap = parsePublicKeyJson(publicKeyJson);
+        if (publicKeyMap == null) {
+            log.error(ErrorCode.KEY_PROCESSING_ERROR.getMessage());
+            ErrorResponseDto errorResponse = new ErrorResponseDto(
+                    ErrorCode.KEY_PROCESSING_ERROR.name(),
+                    ErrorCode.KEY_PROCESSING_ERROR.getMessage()
+            );
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
 
         String n = publicKeyMap.get("n");
         String e = publicKeyMap.get("e");
 
         if (n == null || e == null) {
-            String errorMsg = "Modulus (n) or Exponent (e) are missing from the public key";
-            log.error(errorMsg);
-            throw new KeyGenerationException(errorMsg);
+            log.error(ErrorCode.KEY_FORMAT_ERROR.getMessage());
+            ErrorResponseDto errorResponse = new ErrorResponseDto(
+                    ErrorCode.KEY_FORMAT_ERROR.name(),
+                    ErrorCode.KEY_FORMAT_ERROR.getMessage()
+            );
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
 
-        Map<String, Object> jwk = generateJwk(n, e);
+        JwkResponseDto jwk = generateJwk(n, e);
         log.info("Successfully generated JWK");
 
-        return new ResponseEntity<>(Map.of("keys", List.of(jwk)), HttpStatus.OK);
+        return ResponseEntity.ok(jwk);
     }
 
-    private Map<String, Object> generateJwk(String n, String e) {
+    private Map<String, String> parsePublicKeyJson(String publicKeyJson) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        return objectMapper.readValue(publicKeyJson, new TypeReference<>() {
+        });
+    }
+
+    private JwkResponseDto generateJwk(String n, String e) {
         log.info("Generating JWK from modulus (n) and exponent (e)");
 
-        return Map.of(
-                "kty", "RSA",
-                "e", e,
-                "use", "sig",
-                "kid", authConfig.getKID(),
-                "alg", "RS256",
-                "n", n
+        JwkKeyDto singleKey = new JwkKeyDto(
+                "RSA",
+                e,
+                "sig",
+                authConfig.getKID(),
+                "RS256",
+                n
         );
+        return new JwkResponseDto(List.of(singleKey));
     }
 
     @GetMapping("/.well-known/openid-configuration")

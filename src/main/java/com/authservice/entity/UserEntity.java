@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -16,7 +17,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Set;
 
@@ -43,14 +43,20 @@ public class UserEntity {
     @Column(name = "email", nullable = false)
     private String email;
 
-    @Column(name = "password", nullable = false)
+    @Column(name = "password")
     private String password;
 
+    @Column(name = "password_reset_token")
+    private String passwordResetToken;
+
+    @Column(name = "password_reset_token_expiry")
+    private OffsetDateTime passwordResetTokenExpiry;
+
     @Column(name = "created")
-    private LocalDate created;
+    private OffsetDateTime created;
 
     @Column(name = "updated")
-    private LocalDate updated;
+    private OffsetDateTime updated;
 
     @Column(name = "deleted")
     private Boolean deleted;
@@ -68,4 +74,12 @@ public class UserEntity {
             inverseJoinColumns = @JoinColumn(name = "scope_id")
     )
     private Set<ScopeEntity> scopes;
+
+    @PrePersist
+    public void setCreatedAndUpdated() {
+        OffsetDateTime now = OffsetDateTime.now();
+        this.created = now;
+        this.updated = now;
+        this.deleted = false;
+    }
 }
