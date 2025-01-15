@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
-@Primary
 public class RabbitMQEmailPublisherService implements IEmailPublisherService {
 
     private final RabbitTemplate rabbitTemplate;

@@ -11,6 +11,7 @@ public class KafkaEmailPublisherService implements IEmailPublisherService {
     private final KafkaTemplate<String, EmailMessage> kafkaTemplate;
     private final String topicName;
 
+
     public KafkaEmailPublisherService(KafkaTemplate<String, EmailMessage> kafkaTemplate, @Value("${email.kafka.topic}") String topicName) {
         this.kafkaTemplate = kafkaTemplate;
         this.topicName = topicName;

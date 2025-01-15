@@ -14,6 +14,7 @@ import com.authservice.security.IPasswordHasher;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import java.security.KeyFactory;
@@ -42,6 +43,9 @@ public class AuthService implements IAuthService {
     private final SecureRandom secureRandom;
     private final IEmailPublisherService emailPublisherService;
 
+    @Value("${email.publisher.type}")
+    private String publisherType;
+
 
     @Autowired
     public AuthService(
@@ -50,7 +54,6 @@ public class AuthService implements IAuthService {
             AuthConfig authConfig,
             SecureRandom secureRandom,
             IEmailPublisherService emailPublisherService
-
     ) {
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;
@@ -86,7 +89,8 @@ public class AuthService implements IAuthService {
         EmailMessage emailMessage = new EmailMessage(
                 email,
                 "Password Reset Request",
-                "Click here to reset your password: " + authConfig.getResetPswrdLink() + resetToken
+                publisherType + "Click here to reset your password: " + authConfig.getResetPswrdLink() + resetToken,
+                publisherType
         );
         emailPublisherService.sendEmailMessage(emailMessage);
     }
@@ -116,7 +120,7 @@ public class AuthService implements IAuthService {
         String subject = "Verify your email";
         String body = "Please verify your email by clicking the link";
 
-        EmailMessage emailMessage = new EmailMessage(email, subject, body);
+        EmailMessage emailMessage = new EmailMessage(email, subject, body, publisherType);
         emailPublisherService.sendEmailMessage(emailMessage);
     }
 

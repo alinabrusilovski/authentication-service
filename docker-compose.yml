@@ -1,28 +1,26 @@
-version: '3.8'
-services:
-  zookeeper:
-    image: bitnami/zookeeper:latest
-    container_name: zookeeper
-    ports:
-      - "2181:2181"
-#    networks:
-#      - kafka-net
-    environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
+version: '3'
 
+services:
   kafka:
-    image: bitnami/kafka:latest
+    image: confluentinc/cp-kafka:latest
     container_name: kafka
     environment:
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      ALLOW_PLAINTEXT_LISTENER: "yes"
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      - KAFKA_LISTENER_PLAINTEXT_PORT=9092
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092
+      - KAFKA_LISTENER_NAME=PLAINTEXT
+      - KAFKA_LISTENER_INTERFACE=INSIDE
+      - KAFKA_KRAFT_MODE=true
+      - KAFKA_LISTENER_PLAINTEXT_HOST=kafka
+      - KAFKA_LOG_DIRS=/var/lib/kafka/data
+      - KAFKA_BROKER_ID=1
+      - KAFKA_PORT=9092
+      # Убираем строку с KAFKA_ZOOKEEPER_CONNECT для KRaft режима
+    volumes:
+      - kafka-data:/var/lib/kafka/data
     ports:
-      - "9092:9092"
-#    networks:
-#      - kafka-net
+      - 9092:9092
+    restart: always
 
-#networks:
-#  kafka-net:
-#    driver: bridge
+volumes:
+  kafka-data:
