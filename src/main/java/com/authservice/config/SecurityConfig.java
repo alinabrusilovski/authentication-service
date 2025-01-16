@@ -10,6 +10,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.SecurityFilterChain;
+
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,6 +34,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/health").permitAll()
+                        .requestMatchers("/is-broker-ready").permitAll()
                         .requestMatchers("/auth/reset-password/initiate").permitAll()
                         .requestMatchers("/auth/reset-password").permitAll()
                         .requestMatchers("/.well-known/jwks.json").permitAll()

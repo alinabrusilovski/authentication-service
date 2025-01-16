@@ -8,8 +8,7 @@ import com.authservice.dto.UserDto;
 import com.authservice.entity.UserEntity;
 import com.authservice.enums.ErrorCode;
 import com.authservice.repository.UserRepository;
-import com.authservice.security.PasswordHasher;
-import com.authservice.service.AuthService;
+import com.authservice.service.IAuthService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -30,11 +29,11 @@ import java.util.List;
 @RequestMapping("/auth")
 public class AuthController {
 
-    private final AuthService authService;
+    private final IAuthService authService;
     private final UserRepository userRepository;
 
     @Autowired
-    public AuthController(AuthService authService, UserRepository userRepository, PasswordHasher passwordHasher) {
+    public AuthController(IAuthService authService, UserRepository userRepository) {
         this.authService = authService;
         this.userRepository = userRepository;
     }
