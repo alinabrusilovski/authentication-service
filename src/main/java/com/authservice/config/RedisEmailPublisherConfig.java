@@ -1,5 +1,6 @@
 package com.authservice.config;
 
+import com.authservice.dto.EmailMessage;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,7 +11,7 @@ import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 
 @Configuration
-public class EmailPublisherRedisConfig {
+public class RedisEmailPublisherConfig {
 
     @Value("${email.redis.channel}")
     private String redisChannel;
@@ -25,15 +26,10 @@ public class EmailPublisherRedisConfig {
     }
 
     @Bean
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
-        RedisTemplate<String, Object> template = new RedisTemplate<>();
+    public RedisTemplate<String, EmailMessage> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
+        RedisTemplate<String, EmailMessage> template = new RedisTemplate<>();
         template.setConnectionFactory(redisConnectionFactory);
         template.setDefaultSerializer(new GenericJackson2JsonRedisSerializer());
         return template;
-    }
-
-    @Bean
-    public ChannelTopic emailTopic() {
-        return new ChannelTopic(redisChannel);
     }
 }

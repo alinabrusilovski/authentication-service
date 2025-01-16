@@ -13,11 +13,11 @@ import org.springframework.data.redis.core.RedisTemplate;
 @Slf4j
 public class RedisEmailPublisherService implements IEmailPublisherService {
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisTemplate<String, EmailMessage> redisTemplate;
     private final String redisChannel;
 
     @Autowired
-    public RedisEmailPublisherService(RedisTemplate<String, Object> redisTemplate,
+    public RedisEmailPublisherService(RedisTemplate<String, EmailMessage> redisTemplate,
                                       @Value("${email.redis.channel}") String redisChannel) {
         this.redisTemplate = redisTemplate;
         this.redisChannel = redisChannel;

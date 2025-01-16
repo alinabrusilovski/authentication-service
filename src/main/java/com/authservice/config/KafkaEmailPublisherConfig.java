@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
-public class EmailPublisherKafkaConfig {
+public class KafkaEmailPublisherConfig {
 
     @Value("${email.kafka.bootstrap-servers}")
     private String kafkaBootstrapServers;
