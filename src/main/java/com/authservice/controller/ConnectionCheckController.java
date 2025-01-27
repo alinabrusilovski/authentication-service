@@ -1,6 +1,6 @@
 package com.authservice.controller;
 
-import com.authservice.service.IBrokerConnectionChecker;
+import com.authservice.service.IHealthCheckable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,26 +10,24 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/is-broker-ready")
-public class BrokerConnectionCheckController {
+@RequestMapping("/is-ready")
+public class ConnectionCheckController {
 
-    private final IBrokerConnectionChecker brokerConnectionChecker;
-
-    @Value("${email.publisher.type}")
-    private String brokerName;
+    private final IHealthCheckable emailPublisher;
 
     @Autowired
-    public BrokerConnectionCheckController(IBrokerConnectionChecker brokerConnectionChecker) {
-        this.brokerConnectionChecker = brokerConnectionChecker;
+    public ConnectionCheckController(IHealthCheckable emailPublisher) {
+        this.emailPublisher = emailPublisher;
     }
 
     @GetMapping
     public ResponseEntity<String> checkBrokerConnection() {
-        boolean isReady = brokerConnectionChecker.isBrokerReady();
+        boolean isReady = emailPublisher.isReady();
+        String name = emailPublisher.getName();
 
         String response = isReady
-                ? brokerName + " is ready"
-                : brokerName + " is not ready";
+                ? name + " is ready"
+                : name + " is not ready";
         return ResponseEntity.ok(response);
     }
 }

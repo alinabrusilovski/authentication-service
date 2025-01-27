@@ -78,6 +78,12 @@ dependencies {
     implementation 'jakarta.mail:jakarta.mail-api:1.6.5'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
 
+    // Jedis (Redis client library)
+    implementation 'redis.clients:jedis:4.3.1'
+    // Jackson (for JSON serialization/deserialization)
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+
+
     //RabbitMQ
     implementation 'org.springframework.boot:spring-boot-starter-amqp'
     //Kafka

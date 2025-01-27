@@ -4,6 +4,6 @@ import com.authservice.dto.EmailMessage;
 import org.springframework.stereotype.Component;
 
 @Component
-public interface IEmailPublisherService {
+public interface IEmailPublisher {
     void sendEmailMessage(EmailMessage emailMessage);
 }

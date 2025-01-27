@@ -41,7 +41,7 @@ public class AuthService implements IAuthService {
     private final IPasswordHasher passwordHasher;
     private final AuthConfig authConfig;
     private final SecureRandom secureRandom;
-    private final IEmailPublisherService emailPublisherService;
+    private final IEmailPublisher emailPublisherService;
 
     @Value("${email.publisher.type}")
     private String publisherType;
@@ -53,7 +53,7 @@ public class AuthService implements IAuthService {
             IPasswordHasher passwordHasher,
             AuthConfig authConfig,
             SecureRandom secureRandom,
-            IEmailPublisherService emailPublisherService
+            IEmailPublisher emailPublisherService
     ) {
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;

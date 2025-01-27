@@ -1,9 +1,8 @@
 package com.authservice.config;
 
-import com.authservice.service.IEmailPublisherService;
-import com.authservice.service.KafkaEmailPublisherService;
-import com.authservice.service.RabbitMQEmailPublisherService;
-import com.authservice.service.RedisEmailPublisherService;
+import com.authservice.service.IEmailPublisher;
+import com.authservice.service.RabbitMQEmailPublisher;
+import com.authservice.service.RedisEmailPublisher;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -16,15 +15,13 @@ public class EmailPublisherConfig {
     private String emailPublisherType;
 
     @Bean
-    public IEmailPublisherService emailPublisherService(
-            KafkaEmailPublisherService kafkaEmailPublisherService,
-            RabbitMQEmailPublisherService rabbitMQEmailPublisherService,
-            RedisEmailPublisherService redisEmailPublisherService
+    public IEmailPublisher emailPublisher(
+            RabbitMQEmailPublisher rabbitMQEmailPublisher,
+            RedisEmailPublisher redisEmailPublisher
     ) {
         return switch (emailPublisherType.toLowerCase()) {
-            case "rabbitmq" -> rabbitMQEmailPublisherService;
-            case "kafka" -> kafkaEmailPublisherService;
-            case "redis" -> redisEmailPublisherService;
+            case "rabbitmq" -> rabbitMQEmailPublisher;
+            case "redis" -> redisEmailPublisher;
             default -> throw new IllegalArgumentException("Unsupported email publisher type: " + emailPublisherType);
         };
     }

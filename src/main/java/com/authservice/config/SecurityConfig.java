@@ -34,7 +34,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/health").permitAll()
-                        .requestMatchers("/is-broker-ready").permitAll()
+                        .requestMatchers("/is-ready").permitAll()
                         .requestMatchers("/auth/reset-password/initiate").permitAll()
                         .requestMatchers("/auth/reset-password").permitAll()
                         .requestMatchers("/.well-known/jwks.json").permitAll()
