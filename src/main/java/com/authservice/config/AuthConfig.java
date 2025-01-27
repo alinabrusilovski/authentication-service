@@ -17,6 +17,8 @@ public class AuthConfig {
     private String issuer;
     private String privateKey;
     private String publicKey;
+    private String resetPswrdLink;
     private String KID = UUID.randomUUID().toString();
+    private int passwordResetTokenExpiryHours = 1;
 
 }

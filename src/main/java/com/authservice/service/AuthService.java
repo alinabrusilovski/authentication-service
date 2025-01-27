@@ -3,14 +3,20 @@ package com.authservice.service;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.authservice.config.AuthConfig;
+import com.authservice.dto.EmailMessage;
+import com.authservice.dto.OperationResult;
+import com.authservice.dto.TokenResponseDto;
+import com.authservice.dto.UserDto;
 import com.authservice.entity.ScopeEntity;
 import com.authservice.entity.UserEntity;
 import com.authservice.repository.UserRepository;
 import com.authservice.security.IPasswordHasher;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
@@ -22,11 +28,11 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 
 @Component
+@Slf4j
 public class AuthService implements IAuthService {
 
     private static final ChronoUnit LIFETIME_UNIT = ChronoUnit.HOURS;
@@ -35,28 +41,87 @@ public class AuthService implements IAuthService {
     private final IPasswordHasher passwordHasher;
     private final AuthConfig authConfig;
     private final SecureRandom secureRandom;
+    private final IEmailPublisher emailPublisherService;
+
+    @Value("${email.publisher.type}")
+    private String publisherType;
+
 
     @Autowired
     public AuthService(
             UserRepository userRepository,
             IPasswordHasher passwordHasher,
             AuthConfig authConfig,
-            SecureRandom secureRandom
+            SecureRandom secureRandom,
+            IEmailPublisher emailPublisherService
     ) {
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;
         this.authConfig = authConfig;
         this.secureRandom = secureRandom;
+        this.emailPublisherService = emailPublisherService;
     }
+
 
     @Override
     public boolean checkPassword(String email, String password) throws Exception {
         UserEntity user = userRepository.findByEmail(email);
-        if (user == null) {
+        if (user == null || user.getPassword() == null || user.getPassword().isEmpty()) {
             return false;
         }
-        String storedHash = user.getPassword();
-        return passwordHasher.checkHash(storedHash, password);
+        return passwordHasher.checkHash(user.getPassword(), password);
+    }
+
+    @Override
+    public void initiatePasswordReset(String email) throws Exception {
+        UserEntity user = userRepository.findByEmail(email);
+        if (user == null) {
+            throw new Exception("User not found");
+        }
+        String resetToken = generatePasswordResetToken();
+
+        user.setPasswordResetToken(resetToken);
+        user.setPasswordResetTokenExpiry(OffsetDateTime.now().plusHours(authConfig.getPasswordResetTokenExpiryHours()));
+        userRepository.save(user);
+
+        log.debug("Sending password reset request for email: {}", email);
+
+        EmailMessage emailMessage = new EmailMessage(
+                email,
+                "Password Reset Request",
+                publisherType + "Click here to reset your password: " + authConfig.getResetPswrdLink() + resetToken,
+                publisherType
+        );
+        emailPublisherService.sendEmailMessage(emailMessage);
+    }
+
+    private String generatePasswordResetToken() {
+        byte[] randomBytes = new byte[64];
+        secureRandom.nextBytes(randomBytes);
+        return Base64.getEncoder().encodeToString(randomBytes);
+    }
+
+
+    @Override
+    public void resetPassword(String token, String newPassword) throws Exception {
+        UserEntity user = userRepository.findByPasswordResetToken(token);
+        if (user == null || user.getPasswordResetTokenExpiry() == null || user.getPasswordResetTokenExpiry().isBefore(OffsetDateTime.now())) {
+            throw new Exception("Invalid or expired token");
+        }
+
+        String hashedPassword = passwordHasher.generateHash(newPassword);
+        user.setPassword(hashedPassword);
+        user.setPasswordResetToken(null);
+        user.setPasswordResetTokenExpiry(null);
+        userRepository.save(user);
+    }
+
+    public void sendEmailVerification(String email) {
+        String subject = "Verify your email";
+        String body = "Please verify your email by clicking the link";
+
+        EmailMessage emailMessage = new EmailMessage(email, subject, body, publisherType);
+        emailPublisherService.sendEmailMessage(emailMessage);
     }
 
     public List<String> getScopesForUser(String email) {
@@ -101,23 +166,41 @@ public class AuthService implements IAuthService {
         userRepository.save(user);
     }
 
-    public Map<String, Object> generateAndReturnTokens(UserEntity user, List<String> scopes) throws Exception {
+    public ResponseEntity<Object> generateAndReturnTokens(UserEntity user, List<String> scopes) throws Exception {
         String accessToken = generateJwtToken(user, scopes);
         String refreshToken = generateRefreshToken();
         OffsetDateTime refreshTokenExpiry = calculateTokenExpiry(authConfig.getRefreshTokenLifetimeValue());
 
         updateRefreshTokenForUser(user, refreshToken, refreshTokenExpiry);
 
-        return Map.of(
-                "access_token", accessToken,
-                "refresh_token", refreshToken,
-                "refresh_token_expired", refreshTokenExpiry.toString()
+        TokenResponseDto tokenResponse = new TokenResponseDto(
+                accessToken,
+                refreshToken,
+                refreshTokenExpiry.toString()
         );
+        return ResponseEntity.ok(tokenResponse);
     }
 
     public OffsetDateTime calculateTokenExpiry(long lifetimeValue) {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         return now.plus(lifetimeValue, LIFETIME_UNIT);
+    }
+
+    @Override
+    public OperationResult<UserEntity> createUser(UserDto userDto) throws Exception {
+
+        UserEntity userEntity = new UserEntity();
+        userEntity.setEmail(userDto.getEmail());
+        userEntity.setName(userDto.getName());
+        userEntity.setSecondName(userDto.getSecondName());
+        OffsetDateTime now = OffsetDateTime.now();
+        userEntity.setCreated(now);
+        userEntity.setUpdated(now);
+
+        userEntity.setPassword(null);
+
+        userRepository.save(userEntity);
+        return OperationResult.success(userEntity);
     }
 
 }
