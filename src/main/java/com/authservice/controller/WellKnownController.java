@@ -8,6 +8,12 @@ import com.authservice.enums.ErrorCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,6 +25,7 @@ import java.util.Map;
 
 @RestController
 @Slf4j
+@Tag(name = "Well-Known Controller", description = "Controller providing endpoints for OpenID and JWK configurations")
 public class WellKnownController {
 
     private final AuthConfig authConfig;
@@ -29,6 +36,27 @@ public class WellKnownController {
     }
 
     @GetMapping("/.well-known/jwks.json")
+    @Operation(
+            summary = "Get JWK Set",
+            description = "Returns the JSON Web Key Set (JWKS), containing public keys for verifying JSON Web Tokens (JWTs)"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "JWK Set successfully returned",
+                    content = @Content(schema = @Schema(implementation = JwkResponseDto.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Bad request due to missing or invalid keys",
+                    content = @Content(schema = @Schema(implementation = ErrorResponseDto.class))
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error due to key processing issues",
+                    content = @Content(schema = @Schema(implementation = ErrorResponseDto.class))
+            )
+    })
     public ResponseEntity<Object> getJwks() throws JsonProcessingException {
 
         String publicKeyJson = authConfig.getPublicKey();
@@ -91,6 +119,17 @@ public class WellKnownController {
     }
 
     @GetMapping("/.well-known/openid-configuration")
+    @Operation(
+            summary = "Get OpenID Configuration",
+            description = "Returns OpenID configuration details including JWKS URI, supported signing algorithms, and issuer"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "OpenID configuration successfully returned",
+                    content = @Content(schema = @Schema(implementation = Map.class))
+            )
+    })
     public ResponseEntity<Map<String, Object>> getOpenIdConfiguration() {
         String host = authConfig.getIssuer();
         Map<String, Object> configuration = Map.of(

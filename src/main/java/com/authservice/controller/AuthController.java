@@ -9,6 +9,13 @@ import com.authservice.entity.UserEntity;
 import com.authservice.enums.ErrorCode;
 import com.authservice.repository.UserRepository;
 import com.authservice.service.IAuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -27,6 +34,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/auth")
+@Tag(name = "Authentication Controller", description = "Controller for managing authentication and authorization")
 public class AuthController {
 
     private final IAuthService authService;
@@ -39,7 +47,14 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Object> login(@Valid @RequestBody UserDto userDto) throws Exception {
+    @Operation(summary = "User Login", description = "Allows a user to log in using email and password")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successful authentication"),
+            @ApiResponse(responseCode = "401", description = "Invalid credentials",
+                    content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
+    })
+
+    public ResponseEntity<Object> login(@RequestBody @Valid @Schema(description = "User login credentials") UserDto userDto) throws Exception {
         UserEntity user = userRepository.findByEmail(userDto.getEmail());
 
         if (user.getPassword() == null || user.getPassword().isEmpty()) {
@@ -65,8 +80,15 @@ public class AuthController {
     }
 
     @PostMapping("/login/refresh")
-    public ResponseEntity<Object> refreshAccessToken(@Valid @RequestBody RefreshTokenRequestDto request) throws
-            Exception {
+    @Operation(summary = "Refresh Access Token", description = "Refreshes the access token using a valid refresh token")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Access token successfully refreshed"),
+            @ApiResponse(responseCode = "401", description = "Invalid or expired refresh token",
+                    content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
+    })
+
+    public ResponseEntity<Object> refreshAccessToken(
+            @RequestBody @Valid @Schema(description = "Request containing the refresh token") RefreshTokenRequestDto request) throws Exception {
         String refreshToken = request.getRefreshToken();
 
         if (refreshToken == null || refreshToken.isBlank()) {
@@ -88,7 +110,15 @@ public class AuthController {
     }
 
     @PostMapping("/reset-password/initiate")
-    public ResponseEntity<Object> initiatePasswordReset(@RequestParam String email) throws Exception {
+    @Operation(summary = "Initiate Password Reset", description = "Sends a password reset link to the user's email")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Password reset link sent successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid email address",
+                    content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
+    })
+    public ResponseEntity<Object> initiatePasswordReset(
+            @RequestParam @Parameter(description = "User's email address") String email) throws Exception {
+
         if (email == null || email.isBlank()) {
             ErrorResponseDto errorResponse = new ErrorResponseDto(
                     ErrorCode.INVALID_EMAIL.name(),
@@ -105,21 +135,33 @@ public class AuthController {
     }
 
     @GetMapping("/reset-password")
-    public String resetPasswordForm(@RequestParam("token") String token, Model model) {
+    @Operation(summary = "Password Reset Form", description = "Displays the password reset form for a user")
+    public String resetPasswordForm(
+            @RequestParam("token") @Parameter(description = "Password reset token") String token, Model model) {
+
         model.addAttribute("token", token);
         return "reset-password";
     }
 
     @PostMapping("/reset-password")
-    public String resetPassword(@RequestParam("token") String token,
-                                @RequestParam("password") String newPassword) throws Exception {
+    @Operation(summary = "Reset Password", description = "Resets the user's password using the provided token and new password")
+    public String resetPassword(@RequestParam("token") @Parameter(description = "Password reset token") String token,
+                                @RequestParam("password") @Parameter(description = "New password for the user") String newPassword) throws Exception {
+
         authService.resetPassword(token, newPassword);
         return "redirect:/login";
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping("/create-user")
-    public ResponseEntity<JsonWrapper<Object>> createUser(@RequestBody UserDto userDto) throws Exception {
+    @Operation(summary = "Create New User", description = "Allows an admin to create a new user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User created successfully"),
+            @ApiResponse(responseCode = "500", description = "Server error occurred",
+                    content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
+    })
+    public ResponseEntity<JsonWrapper<Object>> createUser(
+            @RequestBody @Schema(description = "Details of the new user") UserDto userDto) throws Exception {
 
         if (userDto.getPassword() == null || userDto.getPassword().isBlank()) {
             userDto.setPassword(null);

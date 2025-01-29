@@ -18,6 +18,11 @@ ext {
     lombok_version = '1.18.34'
     junit_version = '5.8.2'
     mockito_version = '4.6.1'
+    springdoc_version = '1.7.0'
+    postgresql_version = '42.6.0'
+    jackson_version = '2.15.2'
+    bouncycastle_version = '1.70'
+    jedis_version = '4.3.1'
 }
 
 dependencies {
@@ -35,7 +40,7 @@ dependencies {
     implementation 'ch.qos.logback:logback-classic:1.5.11'
 
     // PostgreSQL Driver
-    runtimeOnly 'org.postgresql:postgresql:42.6.0'
+    runtimeOnly "org.postgresql:postgresql:$postgresql_version"
 
     // Lombok (for reducing boilerplate code)
     implementation "org.projectlombok:lombok:$lombok_version"
@@ -47,7 +52,7 @@ dependencies {
     implementation 'org.hibernate.validator:hibernate-validator:6.2.0.Final'
 
     // BouncyCastle
-    implementation 'org.bouncycastle:bcprov-jdk15on:1.70'
+    implementation "org.bouncycastle:bcprov-jdk15on:$bouncycastle_version"
 
     //.env
     implementation 'io.github.cdimascio:dotenv-java:3.0.2'
@@ -59,39 +64,42 @@ dependencies {
     testImplementation "org.mockito:mockito-inline:$mockito_version"
     testImplementation "org.mockito:mockito-junit-jupiter:$mockito_version"
 
-    //JWT
+    // JWT
     implementation 'com.auth0:java-jwt:4.2.1'
-
 
     // Spring Security
     implementation 'org.springframework.boot:spring-boot-starter-security:3.2.0'
     implementation 'org.springframework.security:spring-security-config:6.1.0'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server:3.0.1'
 
-    //Thymeleaf
+    // Thymeleaf
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
-    //JavaMailSender
+    // JavaMailSender
     implementation 'org.springframework.boot:spring-boot-starter-mail:3.0.0'
 
-    //Jakarta Mail
+    // Jakarta Mail
     implementation 'jakarta.mail:jakarta.mail-api:1.6.5'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
 
     // Jedis (Redis client library)
-    implementation 'redis.clients:jedis:4.3.1'
+    implementation "redis.clients:jedis:$jedis_version"
+
     // Jackson (for JSON serialization/deserialization)
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+    implementation "com.fasterxml.jackson.core:jackson-databind:$jackson_version"
 
-
-    //RabbitMQ
+    // RabbitMQ
     implementation 'org.springframework.boot:spring-boot-starter-amqp'
-    //Kafka
-    implementation 'org.springframework.kafka:spring-kafka'
-    //Redis
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-}
 
+    // Kafka
+    implementation 'org.springframework.kafka:spring-kafka'
+
+    // Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // Springdoc for OpenAPI
+    implementation "org.springdoc:springdoc-openapi-ui:$springdoc_version"
+}
 
 test {
     useJUnitPlatform()
