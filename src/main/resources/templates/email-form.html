@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>reCAPTCHA</title>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+</head>
+<body>
+<form action="http://localhost:11000/auth/reset-password/initiate" method="POST" id="resetPasswordForm">
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required><br><br>
+
+    <div class="g-recaptcha"
+         data-sitekey="6Lc0MsgqAAAAACIxNDqHOJH_ajvK992xyuFQ_XFu">
+    </div>
+
+    <input type="hidden" name="g-recaptcha-response" id="recaptchaResponse">
+
+    <button type="submit">Отправить</button>
+</form>
+
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+<script>
+    document.getElementById('resetPasswordForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        const email = document.getElementById('email').value;
+        const recaptchaResponse = grecaptcha.getResponse();
+
+        if (!recaptchaResponse) {
+            alert("Please complete the reCAPTCHA!");
+            return;
+        }
+
+        document.getElementById("recaptchaResponse").value = recaptchaResponse;
+
+<!--        this.submit();-->
+        fetch('http://localhost:11000/auth/reset-password/initiate', {
+            method: 'POST',
+            body: JSON.stringify({
+                email: email,
+                'g-recaptcha-response': recaptchaResponse
+            }),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Success:', data);
+            alert("Password reset link has been sent to your email");
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+            alert("An error occurred while submitting the data");
+        });
+    });
+</script>
+
+</body>
+</html>

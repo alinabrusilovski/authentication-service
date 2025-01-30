@@ -1,5 +1,6 @@
 package com.authservice.controller;
 
+import com.authservice.config.CaptchaVerification;
 import com.authservice.dto.ErrorResponseDto;
 import com.authservice.dto.JsonWrapper;
 import com.authservice.dto.OperationResult;
@@ -8,6 +9,7 @@ import com.authservice.dto.UserDto;
 import com.authservice.entity.UserEntity;
 import com.authservice.enums.ErrorCode;
 import com.authservice.repository.UserRepository;
+import com.authservice.service.CaptchaService;
 import com.authservice.service.IAuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -39,11 +41,13 @@ public class AuthController {
 
     private final IAuthService authService;
     private final UserRepository userRepository;
+    private final CaptchaVerification captchaVerification;
 
     @Autowired
-    public AuthController(IAuthService authService, UserRepository userRepository) {
+    public AuthController(IAuthService authService, UserRepository userRepository, CaptchaVerification captchaVerification) {
         this.authService = authService;
         this.userRepository = userRepository;
+        this.captchaVerification = captchaVerification;
     }
 
     @PostMapping("/login")
@@ -113,11 +117,12 @@ public class AuthController {
     @Operation(summary = "Initiate Password Reset", description = "Sends a password reset link to the user's email")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Password reset link sent successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid email address",
+            @ApiResponse(responseCode = "400", description = "Invalid email address or captcha verification failed",
                     content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
     })
     public ResponseEntity<Object> initiatePasswordReset(
-            @RequestParam @Parameter(description = "User's email address") String email) throws Exception {
+            @RequestParam @Parameter(description = "User's email address") String email,
+            @RequestParam("g-recaptcha-response") String captchaResponse) throws Exception {
 
         if (email == null || email.isBlank()) {
             ErrorResponseDto errorResponse = new ErrorResponseDto(
@@ -126,10 +131,20 @@ public class AuthController {
             );
             return ResponseEntity.badRequest().body(errorResponse);
         }
+
+        boolean isCaptchaValid = captchaVerification.verifyCaptcha(captchaResponse);
+        if (!isCaptchaValid) {
+            ErrorResponseDto errorResponse = new ErrorResponseDto(
+                    ErrorCode.INVALID_CAPTCHA.name(),
+                    "Captcha verification failed"
+            );
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+
         UserEntity user = userRepository.findByEmail(email);
 
         if (user != null)
-            authService.initiatePasswordReset(email);
+            authService.initiatePasswordReset(email, captchaResponse);
 
         return ResponseEntity.ok("Password reset link has been sent to your email");
     }
