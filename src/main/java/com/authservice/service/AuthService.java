@@ -4,11 +4,13 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.authservice.config.AuthConfig;
 import com.authservice.dto.EmailMessage;
+import com.authservice.dto.ErrorResponseDto;
 import com.authservice.dto.OperationResult;
 import com.authservice.dto.TokenResponseDto;
 import com.authservice.dto.UserDto;
 import com.authservice.entity.ScopeEntity;
 import com.authservice.entity.UserEntity;
+import com.authservice.enums.ErrorCode;
 import com.authservice.repository.UserRepository;
 import com.authservice.security.IPasswordHasher;
 import jakarta.transaction.Transactional;
@@ -46,6 +48,8 @@ public class AuthService implements IAuthService {
     @Value("${email.publisher.type}")
     private String publisherType;
 
+    private final CaptchaService captchaService;
+
 
     @Autowired
     public AuthService(
@@ -53,13 +57,14 @@ public class AuthService implements IAuthService {
             IPasswordHasher passwordHasher,
             AuthConfig authConfig,
             SecureRandom secureRandom,
-            IEmailPublisher emailPublisherService
+            IEmailPublisher emailPublisherService, CaptchaService captchaService
     ) {
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;
         this.authConfig = authConfig;
         this.secureRandom = secureRandom;
         this.emailPublisherService = emailPublisherService;
+        this.captchaService = captchaService;
     }
 
 
@@ -73,7 +78,16 @@ public class AuthService implements IAuthService {
     }
 
     @Override
-    public void initiatePasswordReset(String email) throws Exception {
+    public void initiatePasswordReset(String email, String captchaResponse) throws Exception {
+
+        if (!captchaService.verifyCaptcha(captchaResponse)) {
+            ErrorResponseDto errorResponse = new ErrorResponseDto(
+                    ErrorCode.INVALID_CAPTCHA.name(),
+                    "Captcha verification failed"
+            );
+            throw new Exception("Captcha verification failed");
+        }
+
         UserEntity user = userRepository.findByEmail(email);
         if (user == null) {
             throw new Exception("User not found");
