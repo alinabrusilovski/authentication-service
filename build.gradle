@@ -23,6 +23,7 @@ ext {
     jackson_version = '2.15.2'
     bouncycastle_version = '1.70'
     jedis_version = '4.3.1'
+    prometheus_version = '0.15.0'
 }
 
 dependencies {
@@ -99,6 +100,14 @@ dependencies {
 
     // Springdoc for OpenAPI
     implementation "org.springdoc:springdoc-openapi-ui:$springdoc_version"
+
+    // Prometheus
+    implementation "io.prometheus:simpleclient:$prometheus_version"
+    implementation "io.prometheus:simpleclient_httpserver:$prometheus_version"
+    implementation 'io.micrometer:micrometer-registry-prometheus:1.9.0'
+
+    // Spring Boot Actuator
+    implementation 'org.springframework.boot:spring-boot-starter-actuator:3.3.4'
 }
 
 test {

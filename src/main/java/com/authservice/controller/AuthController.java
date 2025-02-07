@@ -5,12 +5,14 @@ import com.authservice.dto.ErrorResponseDto;
 import com.authservice.dto.JsonWrapper;
 import com.authservice.dto.OperationResult;
 import com.authservice.dto.RefreshTokenRequestDto;
+import com.authservice.dto.ResetPasswordRequestDto;
 import com.authservice.dto.UserDto;
 import com.authservice.entity.UserEntity;
 import com.authservice.enums.ErrorCode;
 import com.authservice.repository.UserRepository;
 import com.authservice.service.CaptchaService;
 import com.authservice.service.IAuthService;
+import com.authservice.service.MetricsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -42,12 +44,15 @@ public class AuthController {
     private final IAuthService authService;
     private final UserRepository userRepository;
     private final CaptchaVerification captchaVerification;
+    private final MetricsService metricsService;
+
 
     @Autowired
-    public AuthController(IAuthService authService, UserRepository userRepository, CaptchaVerification captchaVerification) {
+    public AuthController(IAuthService authService, UserRepository userRepository, CaptchaVerification captchaVerification, MetricsService metricsService) {
         this.authService = authService;
         this.userRepository = userRepository;
         this.captchaVerification = captchaVerification;
+        this.metricsService = metricsService;
     }
 
     @PostMapping("/login")
@@ -59,9 +64,12 @@ public class AuthController {
     })
 
     public ResponseEntity<Object> login(@RequestBody @Valid @Schema(description = "User login credentials") UserDto userDto) throws Exception {
+        metricsService.increaseAuthRequestCount();
+
         UserEntity user = userRepository.findByEmail(userDto.getEmail());
 
         if (user.getPassword() == null || user.getPassword().isEmpty()) {
+            metricsService.increaseAuthErrorCount();
             ErrorResponseDto errorResponse = new ErrorResponseDto(
                     ErrorCode.INVALID_CREDENTIALS.name(),
                     "Invalid credentials"
@@ -71,6 +79,7 @@ public class AuthController {
 
         boolean isPasswordValid = authService.checkPassword(userDto.getEmail(), userDto.getPassword());
         if (!isPasswordValid) {
+            metricsService.increaseAuthErrorCount();
             ErrorResponseDto errorResponse = new ErrorResponseDto(
                     ErrorCode.INVALID_CREDENTIALS.name(),
                     "Invalid credentials"
@@ -80,6 +89,7 @@ public class AuthController {
 
         List<String> scopes = authService.getScopesForUser(userDto.getEmail());
 
+        metricsService.increaseSuccessfulAuth();
         return authService.generateAndReturnTokens(user, scopes);
     }
 
@@ -121,8 +131,11 @@ public class AuthController {
                     content = @Content(schema = @Schema(implementation = ErrorResponseDto.class)))
     })
     public ResponseEntity<Object> initiatePasswordReset(
-            @RequestParam @Parameter(description = "User's email address") String email,
-            @RequestParam("g-recaptcha-response") String captchaResponse) throws Exception {
+            @RequestBody @Parameter(description = "Request body containing user's email and captcha response") ResetPasswordRequestDto resetPasswordRequest) throws Exception {
+        metricsService.increasePasswordResetCount();
+
+        String email = resetPasswordRequest.email();
+        String captchaResponse = resetPasswordRequest.captchaResponse();
 
         if (email == null || email.isBlank()) {
             ErrorResponseDto errorResponse = new ErrorResponseDto(
@@ -148,6 +161,7 @@ public class AuthController {
 
         return ResponseEntity.ok("Password reset link has been sent to your email");
     }
+
 
     @GetMapping("/reset-password")
     @Operation(summary = "Password Reset Form", description = "Displays the password reset form for a user")

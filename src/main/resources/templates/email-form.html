@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>reCAPTCHA</title>
+    <title>Reset Password</title>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body>
-<form action="http://localhost:11000/auth/reset-password/initiate" method="POST" id="resetPasswordForm">
+
+<h2>Reset Password</h2>
+
+<form id="resetPasswordForm">
     <label for="email">Email:</label>
     <input type="email" id="email" name="email" required><br><br>
 
-    <div class="g-recaptcha"
-         data-sitekey="6Lc0MsgqAAAAACIxNDqHOJH_ajvK992xyuFQ_XFu">
-    </div>
+    <div class="g-recaptcha" data-sitekey="6Lc0MsgqAAAAACIxNDqHOJH_ajvK992xyuFQ_XFu"></div><br>
 
     <input type="hidden" name="g-recaptcha-response" id="recaptchaResponse">
 
-    <button type="submit">Отправить</button>
+    <button type="submit">Send Reset Link</button>
 </form>
 
-<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 <script>
     document.getElementById('resetPasswordForm').addEventListener('submit', function(event) {
         event.preventDefault();
@@ -35,7 +35,6 @@
 
         document.getElementById("recaptchaResponse").value = recaptchaResponse;
 
-<!--        this.submit();-->
         fetch('http://localhost:11000/auth/reset-password/initiate', {
             method: 'POST',
             body: JSON.stringify({
